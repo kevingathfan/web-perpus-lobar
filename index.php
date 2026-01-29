@@ -24,16 +24,26 @@
 
         /* ================= HEADER ================= */
         .header-box {
-            width: 100%;
+            width:100%;
             max-width: 1000px;
-            border: 1px solid #000;
-            border-radius: 20px;
             padding: 20px;
             display: flex;
             align-items: center;
             justify-content: space-between;
             margin-bottom: 40px;
             background: #fff;
+            background-image: linear-gradient(
+                    to bottom,
+                    #000 0px,
+                    #000 1px,
+                    transparent 1px,
+                    transparent 4px,
+                    #000 4px,
+                    #000 5px
+                );
+    background-repeat: no-repeat;
+    background-size: 100% 5px;
+    background-position: bottom;
         }
 
         .header-text {
@@ -48,18 +58,19 @@
         }
 
         .logo-img {
-            height: 80px;
-            width: auto;
+            height: 150px;
+            width: 150px;
+            object-fit: contain
         }
 
         /* ================= INFO BOX ================= */
         .info-box {
-            width: 100%;
             max-width: 1000px;
             background: #fff;
             border: 1px solid #000;
             border-radius: 15px;
-            padding: 25px;
+            padding: 40px;
+            margin: 40px;
             box-shadow: 0px 4px 6px rgba(0,0,0,0.05);
         }
 
@@ -135,14 +146,14 @@
 
     <!-- HEADER -->
     <div class="header-box">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/0/0c/Lambang_Kabupaten_Lombok_Barat.png" alt="Logo" class="logo-img">
+        <img src="assets/logo_lobar.png" alt="Logo" class="logo-img">
 
         <div class="header-text">
             <h2>Dinas Kearsipan dan Perpustakaan</h2>
             <p class="mb-0">Kabupaten Lombok Barat</p>
         </div>
 
-        <img src="https://cdn-icons-png.flaticon.com/512/3389/3389081.png" alt="Logo" class="logo-img">
+        <img src="assets/logo_disarpus.png" alt="Logo" class="logo-img">
     </div>
 
     <!-- TITLE -->
@@ -170,7 +181,7 @@
             </div>
 
             <div class="col-md-6">
-                <a href="pustakawan/pilih_perpustakaan.php?target=tkm" class="card-menu">
+                <a href="pustakawan/kuisioner_tkm.php?target=tkm" class="card-menu">
                     <h3>
                         Kuisioner<br>
                         Tingkat Kegemaran<br>
