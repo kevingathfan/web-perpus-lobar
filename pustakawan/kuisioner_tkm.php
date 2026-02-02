@@ -36,7 +36,6 @@ $soal_interaksi = ["Saya datang ke perpustakaan untuk mencari informasi terperca
             position: fixed;
             top: 0; left: 0; right: 0;
             height: 10px;
-            background-color: #000;
             z-index: 9999;
         }
         
