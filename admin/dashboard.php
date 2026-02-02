@@ -3,59 +3,125 @@
 session_start();
 require '../config/database.php';
 
-// --- 1. LOGIKA FILTER PERIODE (BARU) ---
-// Ambil data dari URL, jika tidak ada pakai bulan/tahun saat ini
+// ==========================================
+// 1. LOGIKA BARU: PENGATURAN STATUS & JADWAL
+// ==========================================
+
+// A. Handle Form Submit (Toggle Manual & Save Jadwal)
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    
+    // 1. Tombol Saklar (Manual Buka/Tutup)
+    if (isset($_POST['aksi_status']) && $_POST['aksi_status'] == 'toggle') {
+        $kunci = $_POST['kunci']; 
+        $status_baru = $_POST['status_baru'];
+        
+        // Update status
+        $pdo->prepare("UPDATE settings SET setting_value = ? WHERE setting_key = ?")->execute([$status_baru, $kunci]);
+        
+        // Paksa mode jadi 'manual'
+        $kunci_mode = ($kunci == 'status_iplm') ? 'iplm_mode' : 'tkm_mode';
+        $pdo->prepare("UPDATE settings SET setting_value = 'manual' WHERE setting_key = ?")->execute([$kunci_mode]);
+
+        header("Location: dashboard.php"); exit;
+    }
+
+    // 2. Simpan Jadwal (Dari Modal)
+    if (isset($_POST['aksi_status']) && $_POST['aksi_status'] == 'save_schedule') {
+        $jenis = $_POST['jenis']; // 'iplm' atau 'tkm'
+        $mode  = $_POST['mode'];
+        $start = $_POST['start_date'];
+        $end   = $_POST['end_date'];
+
+        $pdo->prepare("UPDATE settings SET setting_value = ? WHERE setting_key = ?")->execute([$mode, $jenis . '_mode']);
+        $pdo->prepare("UPDATE settings SET setting_value = ? WHERE setting_key = ?")->execute([$start, $jenis . '_start']);
+        $pdo->prepare("UPDATE settings SET setting_value = ? WHERE setting_key = ?")->execute([$end, $jenis . '_end']);
+
+        header("Location: dashboard.php"); exit;
+    }
+}
+
+// B. Ambil Data Settings
+$stmtSet = $pdo->query("SELECT * FROM settings");
+$settings = $stmtSet->fetchAll(PDO::FETCH_KEY_PAIR);
+
+// Helper Status Display
+function getStatusInfo($jenis, $settings) {
+    $mode = $settings[$jenis . '_mode'] ?? 'manual';
+    $manualStatus = $settings['status_' . $jenis] ?? 'buka';
+    $start = $settings[$jenis . '_start'] ?? '';
+    $end = $settings[$jenis . '_end'] ?? '';
+    $now = date('Y-m-d H:i:s');
+    
+    $isOpen = false;
+    $label = "";
+    $desc = "";
+
+    if ($mode == 'manual') {
+        $isOpen = ($manualStatus == 'buka');
+        $label = $isOpen ? "MANUAL: DIBUKA" : "MANUAL: DITUTUP";
+        $desc = "Diatur secara manual oleh admin.";
+    } else {
+        if ($start && $end) {
+            if ($now >= $start && $now <= $end) {
+                $isOpen = true;
+                $label = "TERJADWAL: BERJALAN";
+                $desc = "Tutup otomatis: " . date('d M Y H:i', strtotime($end));
+            } elseif ($now < $start) {
+                $isOpen = false;
+                $label = "TERJADWAL: MENUNGGU";
+                $desc = "Buka otomatis: " . date('d M Y H:i', strtotime($start));
+            } else {
+                $isOpen = false;
+                $label = "TERJADWAL: SELESAI";
+                $desc = "Sudah ditutup sejak: " . date('d M Y H:i', strtotime($end));
+            }
+        } else {
+            $isOpen = false;
+            $label = "TERJADWAL: BELUM DISET";
+            $desc = "Silakan atur tanggal.";
+        }
+    }
+    return ['open' => $isOpen, 'label' => $label, 'desc' => $desc, 'mode' => $mode];
+}
+
+$infoIPLM = getStatusInfo('iplm', $settings);
+$infoTKM  = getStatusInfo('tkm', $settings);
+
+
+// ==========================================
+// 2. LOGIKA LAMA: FILTER & STATISTIK
+// ==========================================
 $bulan_pilih = isset($_GET['bulan']) ? $_GET['bulan'] : date('m');
 $tahun_pilih = isset($_GET['tahun']) ? $_GET['tahun'] : date('Y');
 
-// Array Nama Bulan untuk Label
 $list_bulan = [
     '01' => 'Januari', '02' => 'Februari', '03' => 'Maret', '04' => 'April',
     '05' => 'Mei', '06' => 'Juni', '07' => 'Juli', '08' => 'Agustus',
     '09' => 'September', '10' => 'Oktober', '11' => 'November', '12' => 'Desember'
 ];
-
 $label_periode = $list_bulan[$bulan_pilih] . " " . $tahun_pilih;
 
-// --- 2. QUERY DATABASE ---
+try { $stmt = $pdo->query("SELECT COUNT(*) FROM libraries"); $total_perpus = $stmt->fetchColumn(); } catch (Exception $e) { $total_perpus = 0; }
 
-// A. TOTAL PERPUSTAKAAN (TETAP - Tidak terpengaruh filter)
 try {
-    $stmt = $pdo->query("SELECT COUNT(*) FROM libraries");
-    $total_perpus = $stmt->fetchColumn();
-} catch (Exception $e) { $total_perpus = 0; }
-
-// B. IPLM (BERUBAH - Terpengaruh Filter Bulan/Tahun)
-try {
-    // Menggunakan syntax PostgreSQL: EXTRACT(MONTH ...)
-    $sqlIplm = "SELECT COUNT(*) FROM trans_iplm 
-                WHERE EXTRACT(MONTH FROM created_at) = :bln 
-                AND EXTRACT(YEAR FROM created_at) = :thn";
+    $sqlIplm = "SELECT COUNT(*) FROM trans_iplm WHERE EXTRACT(MONTH FROM created_at) = :bln AND EXTRACT(YEAR FROM created_at) = :thn";
     $stmtIplm = $pdo->prepare($sqlIplm);
     $stmtIplm->execute([':bln' => $bulan_pilih, ':thn' => $tahun_pilih]);
     $total_iplm = $stmtIplm->fetchColumn();
 } catch (Exception $e) { $total_iplm = 0; }
 
-// C. TKM (BERUBAH - Terpengaruh Filter Bulan/Tahun)
 try {
-    $sqlTkm = "SELECT COUNT(*) FROM trans_tkm 
-               WHERE EXTRACT(MONTH FROM created_at) = :bln 
-               AND EXTRACT(YEAR FROM created_at) = :thn";
+    $sqlTkm = "SELECT COUNT(*) FROM trans_tkm WHERE EXTRACT(MONTH FROM created_at) = :bln AND EXTRACT(YEAR FROM created_at) = :thn";
     $stmtTkm = $pdo->prepare($sqlTkm);
     $stmtTkm->execute([':bln' => $bulan_pilih, ':thn' => $tahun_pilih]);
     $total_tkm = $stmtTkm->fetchColumn();
 } catch (Exception $e) { $total_tkm = 0; }
 
-// Hitung "Belum Mengisi" secara dinamis berdasarkan filter
-$belum_iplm = $total_perpus - $total_iplm;
-if ($belum_iplm < 0) $belum_iplm = 0;
+$belum_iplm = max(0, $total_perpus - $total_iplm);
 
-// --- 3. DATA CHART (TETAP - Statistik Tahunan/Global) ---
-// Bagian ini TIDAK menggunakan filter bulan agar tren tahunan tetap terlihat
 $chart_labels = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
 $data_iplm_chart = [200, 220, 240, 300, 400, 350, 0, 0, 0, 0, 0, 0];
 $data_tkm_chart  = [180, 250, 300, 350, 320, 410, 0, 0, 0, 0, 0, 0];
-// Total responden di atas chart (misal data tahunan)
 $total_responden_tahunan = array_sum($data_iplm_chart) + array_sum($data_tkm_chart); 
 ?>
 
@@ -77,30 +143,20 @@ $total_responden_tahunan = array_sum($data_iplm_chart) + array_sum($data_tkm_cha
 
         /* --- SIDEBAR --- */
         .sidebar {
-            min-height: 100vh;
-            width: 260px;
-            background-color: #ffffff;
-            border-right: 1px solid #e0e0e0;
-            position: fixed;
-            top: 0; left: 0;
-            padding: 40px 20px;
-            z-index: 100;
+            min-height: 100vh; width: 260px; background-color: #ffffff;
+            border-right: 1px solid #e0e0e0; position: fixed; top: 0; left: 0;
+            padding: 40px 20px; z-index: 100;
         }
-
         .sidebar-header {
             font-weight: 800; font-size: 24px; margin-bottom: 50px; color: #000;
             text-align: center; letter-spacing: 1px;
         }
-
         .nav-link {
             color: #666; font-weight: 600; font-size: 15px; padding: 12px 20px;
             margin-bottom: 8px; border-radius: 8px; transition: all 0.3s;
             display: flex; align-items: center; gap: 10px;
         }
-        
-        .nav-link:hover, .nav-link.active {
-            background-color: #000; color: #fff;
-        }
+        .nav-link:hover, .nav-link.active { background-color: #000; color: #fff; }
 
         /* --- MAIN CONTENT --- */
         .main-content { margin-left: 260px; padding: 40px 50px; }
@@ -115,7 +171,7 @@ $total_responden_tahunan = array_sum($data_iplm_chart) + array_sum($data_tkm_cha
         }
         .card-clean:hover { transform: translateY(-3px); }
 
-        /* Tombol Filter Keren */
+        /* Tombol Filter */
         .btn-filter {
             background-color: #f1f3f5; color: #333; border: none; padding: 8px 16px;
             border-radius: 30px; font-size: 13px; font-weight: 600; transition: all 0.2s;
@@ -130,11 +186,7 @@ $total_responden_tahunan = array_sum($data_iplm_chart) + array_sum($data_tkm_cha
             flex-direction: column; justify-content: center; align-items: center;
             transition: all 0.3s;
         }
-        
-        .stat-box.highlight {
-            background-color: #000; color: #fff; border: 1px solid #000;
-        }
-        
+        .stat-box.highlight { background-color: #000; color: #fff; border: 1px solid #000; }
         .stat-number { font-size: 32px; font-weight: 800; line-height: 1.2; }
         .stat-label { font-size: 14px; font-weight: 500; margin-top: 5px; opacity: 0.8; }
         
@@ -144,15 +196,16 @@ $total_responden_tahunan = array_sum($data_iplm_chart) + array_sum($data_tkm_cha
             display: flex; justify-content: space-between;
         }
         .list-active li:last-child { border-bottom: none; }
-        .badge-count { 
-            background: #000; color: #fff; padding: 2px 8px; border-radius: 6px; font-size: 12px; 
-        }
-
+        .badge-count { background: #000; color: #fff; padding: 2px 8px; border-radius: 6px; font-size: 12px; }
         .btn-export-text {
             font-size: 13px; font-weight: 600; text-decoration: none; color: #666;
             padding: 6px 12px; border-radius: 6px; transition: 0.2s;
         }
         .btn-export-text:hover { background: #eee; color: #000; }
+
+        /* --- NEW STYLE: Status Border --- */
+        .status-open { border-left: 5px solid #198754 !important; }
+        .status-closed { border-left: 5px solid #dc3545 !important; }
     </style>
 </head>
 <body>
@@ -161,8 +214,8 @@ $total_responden_tahunan = array_sum($data_iplm_chart) + array_sum($data_tkm_cha
         <div class="sidebar-header">DISARPUS</div>
         <div class="nav flex-column">
             <a href="#" class="nav-link active"><i class="bi bi-grid-fill"></i> DASHBOARD</a>
-            <a href="#" class="nav-link"><i class="bi bi-building"></i> PERPUSTAKAAN</a>
-            <a href="#" class="nav-link"><i class="bi bi-file-text"></i> KUISIONER</a>
+            <a href="perpustakaan.php" class="nav-link"><i class="bi bi-building"></i> PERPUSTAKAAN</a>
+            <a href="atur_pertanyaan.php" class="nav-link"><i class="bi bi-file-text"></i> KUISIONER</a>
             <a href="#" class="nav-link"><i class="bi bi-chat-left-text"></i> PENGADUAN</a>
             
             <div class="mt-5 pt-5 border-top">
@@ -183,6 +236,61 @@ $total_responden_tahunan = array_sum($data_iplm_chart) + array_sum($data_tkm_cha
             </div>
         </div>
 
+        <div class="row g-4 mb-5">
+            <div class="col-md-6">
+                <div class="card-clean p-3 <?= $infoIPLM['open'] ? 'status-open' : 'status-closed' ?>">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="fw-bold m-0 mb-1"><i class="bi bi-file-earmark-text-fill me-2"></i>Status IPLM</h6>
+                            <span class="badge <?= $infoIPLM['open'] ? 'bg-success' : 'bg-danger' ?> mb-2"><?= $infoIPLM['label'] ?></span>
+                            <p class="text-muted small m-0" style="line-height:1.2"><?= $infoIPLM['desc'] ?></p>
+                        </div>
+                        <div class="text-end">
+                            <?php if($infoIPLM['mode'] == 'manual'): ?>
+                                <form method="POST" class="d-inline">
+                                    <input type="hidden" name="aksi_status" value="toggle">
+                                    <input type="hidden" name="kunci" value="status_iplm">
+                                    <input type="hidden" name="status_baru" value="<?= $infoIPLM['open'] ? 'tutup' : 'buka' ?>">
+                                    <button class="btn btn-sm btn-dark rounded-pill fw-bold mb-2 w-100">
+                                        <?= $infoIPLM['open'] ? 'TUTUP' : 'BUKA' ?>
+                                    </button>
+                                </form>
+                            <?php endif; ?>
+                            <button class="btn btn-sm btn-outline-dark rounded-pill w-100" data-bs-toggle="modal" data-bs-target="#modalJadwalIPLM">
+                                Atur Jadwal
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card-clean p-3 <?= $infoTKM['open'] ? 'status-open' : 'status-closed' ?>">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="fw-bold m-0 mb-1"><i class="bi bi-people-fill me-2"></i>Status TKM</h6>
+                            <span class="badge <?= $infoTKM['open'] ? 'bg-success' : 'bg-danger' ?> mb-2"><?= $infoTKM['label'] ?></span>
+                            <p class="text-muted small m-0" style="line-height:1.2"><?= $infoTKM['desc'] ?></p>
+                        </div>
+                        <div class="text-end">
+                            <?php if($infoTKM['mode'] == 'manual'): ?>
+                                <form method="POST" class="d-inline">
+                                    <input type="hidden" name="aksi_status" value="toggle">
+                                    <input type="hidden" name="kunci" value="status_tkm">
+                                    <input type="hidden" name="status_baru" value="<?= $infoTKM['open'] ? 'tutup' : 'buka' ?>">
+                                    <button class="btn btn-sm btn-dark rounded-pill fw-bold mb-2 w-100">
+                                        <?= $infoTKM['open'] ? 'TUTUP' : 'BUKA' ?>
+                                    </button>
+                                </form>
+                            <?php endif; ?>
+                            <button class="btn btn-sm btn-outline-dark rounded-pill w-100" data-bs-toggle="modal" data-bs-target="#modalJadwalTKM">
+                                Atur Jadwal
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
         <div class="row g-4 mb-5">
             <div class="col-lg-8">
                 <div class="card-clean">
@@ -348,14 +456,97 @@ $total_responden_tahunan = array_sum($data_iplm_chart) + array_sum($data_tkm_cha
         </div>
     </div>
 
+    <div class="modal fade" id="modalJadwalIPLM" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content rounded-4 border-0">
+                <div class="modal-header bg-dark text-white">
+                    <h5 class="modal-title fw-bold">Pengaturan Akses IPLM</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form method="POST">
+                    <div class="modal-body p-4">
+                        <input type="hidden" name="aksi_status" value="save_schedule">
+                        <input type="hidden" name="jenis" value="iplm">
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Mode Akses</label>
+                            <select name="mode" class="form-select" onchange="toggleDateInput('iplm', this.value)">
+                                <option value="manual" <?= ($settings['iplm_mode'] ?? '') == 'manual' ? 'selected' : '' ?>>Manual (Tombol Buka/Tutup)</option>
+                                <option value="auto" <?= ($settings['iplm_mode'] ?? '') == 'auto' ? 'selected' : '' ?>>Terjadwal (Otomatis)</option>
+                            </select>
+                        </div>
+                        <div id="date-inputs-iplm" style="<?= ($settings['iplm_mode'] ?? '') == 'manual' ? 'display:none' : '' ?>">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold small">Mulai</label>
+                                <input type="datetime-local" name="start_date" class="form-control" value="<?= $settings['iplm_start'] ?? '' ?>">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold small">Selesai</label>
+                                <input type="datetime-local" name="end_date" class="form-control" value="<?= $settings['iplm_end'] ?? '' ?>">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-dark fw-bold">Simpan</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalJadwalTKM" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content rounded-4 border-0">
+                <div class="modal-header bg-dark text-white">
+                    <h5 class="modal-title fw-bold">Pengaturan Akses TKM</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form method="POST">
+                    <div class="modal-body p-4">
+                        <input type="hidden" name="aksi_status" value="save_schedule">
+                        <input type="hidden" name="jenis" value="tkm">
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Mode Akses</label>
+                            <select name="mode" class="form-select" onchange="toggleDateInput('tkm', this.value)">
+                                <option value="manual" <?= ($settings['tkm_mode'] ?? '') == 'manual' ? 'selected' : '' ?>>Manual (Tombol Buka/Tutup)</option>
+                                <option value="auto" <?= ($settings['tkm_mode'] ?? '') == 'auto' ? 'selected' : '' ?>>Terjadwal (Otomatis)</option>
+                            </select>
+                        </div>
+                        <div id="date-inputs-tkm" style="<?= ($settings['tkm_mode'] ?? '') == 'manual' ? 'display:none' : '' ?>">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold small">Mulai</label>
+                                <input type="datetime-local" name="start_date" class="form-control" value="<?= $settings['tkm_start'] ?? '' ?>">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold small">Selesai</label>
+                                <input type="datetime-local" name="end_date" class="form-control" value="<?= $settings['tkm_end'] ?? '' ?>">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-dark fw-bold">Simpan</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
+        function toggleDateInput(jenis, val) {
+            const el = document.getElementById('date-inputs-' + jenis);
+            el.style.display = (val === 'auto') ? 'block' : 'none';
+        }
+
         const ctx = document.getElementById('myChart');
         
         // Gradient Warna Chart
         const gradientIplm = ctx.getContext('2d').createLinearGradient(0, 0, 0, 400);
-        gradientIplm.addColorStop(0, 'rgba(0, 0, 0, 0.1)'); 
+        gradientIplm.addColorStop(0, '#0000001a'); 
         gradientIplm.addColorStop(1, 'rgba(0, 0, 0, 0)');
 
         new Chart(ctx, {
@@ -367,9 +558,9 @@ $total_responden_tahunan = array_sum($data_iplm_chart) + array_sum($data_tkm_cha
                         label: 'IPLM',
                         data: <?= json_encode($data_iplm_chart) ?>,
                         borderWidth: 2,
-                        borderColor: '#000000', 
+                        borderColor: '#0d6efd', 
                         backgroundColor: gradientIplm,
-                        pointBackgroundColor: '#000',
+                        pointBackgroundColor: '#ffffff',
                         pointRadius: 4,
                         tension: 0.4,
                         fill: true
@@ -378,10 +569,10 @@ $total_responden_tahunan = array_sum($data_iplm_chart) + array_sum($data_tkm_cha
                         label: 'TKM',
                         data: <?= json_encode($data_tkm_chart) ?>,
                         borderWidth: 2,
-                        borderColor: '#adb5bd',
+                        borderColor: '#d62a2a',
                         backgroundColor: 'transparent',
-                        pointBackgroundColor: '#fff',
-                        pointBorderColor: '#adb5bd',
+                        pointBackgroundColor: '#d62a2a',
+                        pointBorderColor: '#ffffff',
                         pointBorderWidth: 2,
                         pointRadius: 4,
                         tension: 0.4,
