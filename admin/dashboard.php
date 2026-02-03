@@ -184,7 +184,7 @@ try {
             <a href="dashboard.php" class="nav-link active"><i class="bi bi-grid-fill"></i> DASHBOARD</a>
             <a href="perpustakaan.php" class="nav-link"><i class="bi bi-building"></i> PERPUSTAKAAN</a>
             <a href="atur_pertanyaan.php" class="nav-link"><i class="bi bi-file-text"></i> KUISIONER</a>
-            <a href="#" class="nav-link"><i class="bi bi-chat-left-text"></i> PENGADUAN</a>
+            <a href="pengaduan.php" class="nav-link"><i class="bi bi-chat-left-text"></i> PENGADUAN</a>
             <div class="mt-5 pt-5 border-top">
                 <a href="../index.php" class="nav-link text-danger"><i class="bi bi-box-arrow-left"></i> KELUAR</a>
             </div>
@@ -297,8 +297,13 @@ try {
         </div>
 
         <div class="d-flex justify-content-between align-items-center mb-3 border-start border-4 border-dark ps-3">
-            <h5 class="fw-bold m-0">Rincian Statistik Data</h5>
-            <span class="badge bg-secondary rounded-pill">Periode: <?= $label_periode ?></span>
+            <div>
+                <h5 class="fw-bold m-0">Rincian Statistik Data</h5>
+                <small class="text-muted">Periode: <?= $label_periode ?></small>
+            </div>
+            <button type="button" class="btn-filter" data-bs-toggle="modal" data-bs-target="#filterModal">
+                <i class="bi bi-funnel"></i> Filter Periode
+            </button>
         </div>
         
         <div class="row g-4">
@@ -306,8 +311,7 @@ try {
                 <div class="card-clean bg-light border-0">
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <h6 class="fw-bold m-0"><i class="bi bi-book-half me-2"></i>Data IPLM</h6>
-                        <button type="button" class="btn-filter" data-bs-toggle="modal" data-bs-target="#filterModal"><i class="bi bi-funnel"></i> Filter Bulan</button>
-                    </div>
+                        </div>
                     <div class="row g-3">
                         <div class="col-md-5">
                             <div class="stat-box highlight text-start align-items-start px-4">
@@ -339,8 +343,7 @@ try {
                 <div class="card-clean bg-light border-0 h-100">
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <h6 class="fw-bold m-0"><i class="bi bi-people-fill me-2"></i>Data TKM</h6>
-                         <button type="button" class="btn-filter" data-bs-toggle="modal" data-bs-target="#filterModal"><i class="bi bi-funnel"></i> Filter Responden</button>
-                    </div>
+                         </div>
                     <div class="stat-box bg-white h-75 d-flex flex-column justify-content-center">
                         <div class="mb-3"><span class="badge bg-dark rounded-pill px-3 py-2 mb-2">Total Partisipan</span></div>
                         <span class="display-3 fw-bold text-dark"><?= number_format($total_tkm) ?></span>

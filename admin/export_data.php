@@ -3,7 +3,7 @@
 session_start();
 require '../config/database.php';
 
-// [PENTING] Load Library PhpSpreadsheet
+// Load Library PhpSpreadsheet
 require '../vendor/autoload.php'; 
 
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -34,16 +34,16 @@ $title_text = "REKAPITULASI DATA " . strtoupper($jenis);
 $periode_text = "Periode: $start_bln/$start_thn s.d. $end_bln/$end_thn";
 
 // 3. AMBIL PERTANYAAN (HEADER KOLOM DINAMIS)
-$stmtSoal = $pdo->prepare("SELECT id, teks_pertanyaan, kategori_bagian FROM master_pertanyaan WHERE jenis_kuesioner = ? ORDER BY kategori_bagian ASC, urutan ASC");
+// Penting: Ambil 'tipe_input' untuk konversi Likert nanti
+$stmtSoal = $pdo->prepare("SELECT id, teks_pertanyaan, kategori_bagian, tipe_input FROM master_pertanyaan WHERE jenis_kuesioner = ? ORDER BY kategori_bagian ASC, urutan ASC");
 $stmtSoal->execute([strtoupper($jenis)]);
 $daftar_soal = $stmtSoal->fetchAll(PDO::FETCH_ASSOC);
 
 // 4. AMBIL DATA RESPONDEN (HEADER)
-// Filter berdasarkan rentang periode (YYYYMM)
 $start_period = (int)($start_thn . $start_bln);
 $end_period   = (int)($end_thn . $end_bln);
 
-// Note: Kolom created_at dihapus dari query untuk mencegah error
+// [FIX] Menghapus h.created_at dari query agar tidak error
 $sql = "SELECT h.id as header_id, h.periode_bulan, h.periode_tahun,
                l.nama as nama_perpus, l.jenis as jenis_perpus, l.kategori
         FROM trans_header h
@@ -75,7 +75,7 @@ if (!empty($list_header_ids)) {
 }
 
 // ==========================================
-// 6. MULAI MEMBUAT EXCEL (PHPSPREADSHEET)
+// 6. MULAI MEMBUAT EXCEL
 // ==========================================
 $spreadsheet = new Spreadsheet();
 $sheet = $spreadsheet->getActiveSheet();
@@ -88,14 +88,16 @@ $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(14);
 $sheet->getStyle('A2')->getFont()->setItalic(true);
 
 // --- B. Setup Baris Header Tabel ---
-$row_head_1 = 4; // Baris untuk Kategori
-$row_head_2 = 5; // Baris untuk Pertanyaan
+$row_head_1 = 4; // Baris Kategori
+$row_head_2 = 5; // Baris Pertanyaan
 
 // Kolom Identitas Dasar
 $sheet->setCellValue('A'.$row_head_1, 'NO'); $sheet->mergeCells("A$row_head_1:A$row_head_2");
 $sheet->setCellValue('B'.$row_head_1, 'PERIODE'); $sheet->mergeCells("B$row_head_1:B$row_head_2");
 
-$col = 'C'; // Mulai kolom C
+$col = 'C'; // [FIX] Mulai dari C (karena kolom Tanggal dihapus)
+
+// Header Identitas Perpus (Hanya IPLM)
 if ($jenis == 'iplm') {
     $sheet->setCellValue($col.$row_head_1, 'NAMA PERPUSTAKAAN'); $sheet->mergeCells("{$col}{$row_head_1}:{$col}{$row_head_2}"); 
     $sheet->getColumnDimension($col)->setWidth(30); 
@@ -103,21 +105,16 @@ if ($jenis == 'iplm') {
     
     $sheet->setCellValue($col.$row_head_1, 'KATEGORI'); $sheet->mergeCells("{$col}{$row_head_1}:{$col}{$row_head_2}"); $col++;
     $sheet->setCellValue($col.$row_head_1, 'JENIS'); $sheet->mergeCells("{$col}{$row_head_1}:{$col}{$row_head_2}"); $col++;
-} else {
-    $sheet->setCellValue($col.$row_head_1, 'ASAL / PERPUSTAKAAN'); $sheet->mergeCells("{$col}{$row_head_1}:{$col}{$row_head_2}"); 
-    $sheet->getColumnDimension($col)->setWidth(30);
-    $col++;
-}
+} 
+// TKM: Langsung masuk ke pertanyaan (Kolom Asal Perpustakaan dihapus sesuai request)
 
 // --- C. Kolom Dinamis (Pertanyaan) ---
-// Grouping pertanyaan per kategori untuk header gabungan
 $grouped_soal = [];
 foreach ($daftar_soal as $s) {
     $bag = $s['kategori_bagian'] ?: 'LAINNYA';
     $grouped_soal[$bag][] = $s;
 }
 
-// Warna-warni Header Kategori (Pastel)
 $colors = ['FFFFE0B2', 'FFC8E6C9', 'FFBBDEFB', 'FFF8BBD0', 'FFE1BEE7']; 
 $color_idx = 0;
 
@@ -126,7 +123,7 @@ foreach ($grouped_soal as $kategori => $items) {
     
     // Header Atas (Kategori)
     $start_col = $col;
-    for ($i = 1; $i < $jml_soal; $i++) $col++; // Geser penunjuk kolom
+    for ($i = 1; $i < $jml_soal; $i++) $col++; 
     $end_col = $col;
     
     $sheet->setCellValue($start_col.$row_head_1, $kategori);
@@ -134,7 +131,7 @@ foreach ($grouped_soal as $kategori => $items) {
         $sheet->mergeCells("$start_col$row_head_1:$end_col$row_head_1");
     }
     
-    // Beri Warna Background Kategori
+    // Warna Background Kategori
     $bg_color = $colors[$color_idx % count($colors)];
     $sheet->getStyle("$start_col$row_head_1:$end_col$row_head_1")->getFill()
           ->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB($bg_color);
@@ -143,16 +140,16 @@ foreach ($grouped_soal as $kategori => $items) {
     $curr = $start_col;
     foreach ($items as $item) {
         $sheet->setCellValue($curr.$row_head_2, $item['teks_pertanyaan']);
-        $sheet->getColumnDimension($curr)->setWidth(20); // Lebar kolom
+        $sheet->getColumnDimension($curr)->setWidth(20);
         $curr++;
     }
     
-    $col++; // Pindah ke kolom berikutnya untuk kategori selanjutnya
+    $col++;
     $color_idx++;
 }
 $last_col = $sheet->getHighestColumn();
 
-// Style Header Utama (Tebal, Tengah, Border, Wrap Text)
+// Style Header Utama
 $header_style = [
     'font' => ['bold' => true],
     'alignment' => [
@@ -170,6 +167,14 @@ $sheet->getStyle("A$row_head_1:$last_col$row_head_2")->applyFromArray($header_st
 $row_num = $row_head_2 + 1;
 $no = 1;
 
+// Mapping Likert (Angka -> Huruf)
+$likert_map = [
+    '1' => 'Sangat Tidak Setuju',
+    '2' => 'Tidak Setuju',
+    '3' => 'Setuju',
+    '4' => 'Sangat Setuju'
+];
+
 if (empty($responden)) {
     $sheet->setCellValue('A'.$row_num, 'Tidak ada data pada periode ini.');
     $sheet->mergeCells("A$row_num:$last_col$row_num");
@@ -179,22 +184,24 @@ if (empty($responden)) {
         $sheet->setCellValue('A'.$row_num, $no++);
         $sheet->setCellValue('B'.$row_num, $row['periode_bulan'] . '/' . $row['periode_tahun']);
         
-        $col = 'C';
+        $col = 'C'; // [FIX] Reset ke kolom C
+        
         if ($jenis == 'iplm') {
             $sheet->setCellValue($col++.$row_num, $row['nama_perpus'] ?? '-');
             $sheet->setCellValue($col++.$row_num, $row['kategori'] ?? '-');
             $sheet->setCellValue($col++.$row_num, $row['jenis_perpus'] ?? '-');
-        } else {
-            $sheet->setCellValue($col++.$row_num, $row['nama_perpus'] ?? 'Umum/Masyarakat');
         }
 
         // Isi Jawaban
         foreach ($daftar_soal as $s) {
             $id_soal = $s['id'];
-            // Ambil jawaban dari map, jika kosong strip (-)
             $val = isset($jawaban_map[$row['header_id']][$id_soal]) ? $jawaban_map[$row['header_id']][$id_soal] : '-';
             
-            // Pakai setCellValueExplicit agar angka (seperti NIK/HP) tidak berubah jadi format ilmiah (E+)
+            // Konversi Angka Likert ke Huruf
+            if ($s['tipe_input'] == 'likert' && isset($likert_map[$val])) {
+                $val = $likert_map[$val];
+            }
+            
             $sheet->setCellValueExplicit($col++.$row_num, $val, DataType::TYPE_STRING);
         }
         $row_num++;
@@ -205,7 +212,6 @@ if (empty($responden)) {
 $last_row = $row_num - 1;
 if ($last_row >= $row_head_1) {
     $sheet->getStyle("A$row_head_1:$last_col$last_row")->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
-    // Ratakan tengah untuk kolom No & Periode
     $sheet->getStyle("A$row_head_1:B$last_row")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER); 
 }
 

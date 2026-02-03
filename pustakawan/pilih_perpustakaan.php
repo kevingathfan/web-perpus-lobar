@@ -8,12 +8,11 @@ $target = isset($_GET['target']) ? $_GET['target'] : '../index.php';
 $stmt = $pdo->query("SELECT id, nama, jenis FROM libraries ORDER BY nama ASC");
 $libraries = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// 2. AMBIL MASTER KATEGORI DARI DATABASE (BARU)
+// 2. AMBIL MASTER KATEGORI DARI DATABASE
 $stmtKat = $pdo->query("SELECT kategori, sub_kategori FROM master_kategori ORDER BY kategori ASC, sub_kategori ASC");
 $rawKategori = $stmtKat->fetchAll(PDO::FETCH_ASSOC);
 
 // Format array agar siap diubah jadi JSON untuk JavaScript
-// Output yang diinginkan: {'Sekolah': ['SD', 'SMP'], 'Umum': ['Desa', ...]}
 $strukturJenis = [];
 foreach ($rawKategori as $row) {
     $strukturJenis[$row['kategori']][] = $row['sub_kategori'];
@@ -30,9 +29,103 @@ foreach ($rawKategori as $row) {
   <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <style> body { background-color: #f8f9fa; font-family: 'Poppins', sans-serif; display: flex; align-items: center; min-height: 100vh; } .card { border-radius: 15px; border: 1px solid #ddd; box-shadow: 0 4px 6px rgba(0,0,0,0.05); } </style>
+  <style> body { background-color: #f8f9fa; font-family: 'Poppins', sans-serif; display: flex; align-items: center; min-height: 100vh; } .card { border-radius: 15px; border: 1px solid #ddd; box-shadow: 0 4px 6px rgba(0,0,0,0.05); } 
+    /* --- START PRELOADER CSS --- */
+
+/* 1. Container Full Screen */
+#global-loader {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: #ffffff; /* Latar Putih Bersih */
+    z-index: 99999; /* Pastikan di layer paling atas */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.5s ease, visibility 0.5s ease;
+}
+
+/* 2. Wrapper Konten (Spinner + Teks) */
+.loader-content {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* 3. Spinner Modern Ganda */
+.spinner-brand {
+    position: relative;
+    width: 60px;
+    height: 60px;
+    margin-bottom: 15px;
+}
+
+.spinner-circle {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border: 3px solid #e5e7eb; /* Abu-abu muda */
+    border-top-color: #2c3e50; /* Warna Utama (Navy) */
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+.spinner-circle-inner {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    width: 30px;
+    height: 30px;
+    border: 3px solid #e5e7eb;
+    border-bottom-color: #34495e; /* Warna Aksen (Dark Slate) */
+    border-radius: 50%;
+    animation: spin-reverse 1.5s linear infinite;
+}
+
+/* 4. Teks Loading Berdenyut */
+.loading-text {
+    font-family: 'Segoe UI', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 600;
+    letter-spacing: 2px;
+    color: #2c3e50;
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+/* 5. Kelas Utilitas untuk Menyembunyikan Loader */
+.loader-hidden {
+    opacity: 0;
+    visibility: hidden;
+}
+
+/* 6. Animasi Keyframes */
+@keyframes spin { 
+    100% { transform: rotate(360deg); } 
+}
+@keyframes spin-reverse { 
+    100% { transform: rotate(-360deg); } 
+}
+@keyframes pulse { 
+    0%, 100% { opacity: 1; } 
+    50% { opacity: 0.5; } 
+}
+
+/* --- END PRELOADER CSS --- */
+  </style>
 </head>
 <body>
+  <div id="global-loader">
+    <div class="loader-content">
+        <div class="spinner-brand">
+            <div class="spinner-circle"></div>
+            <div class="spinner-circle-inner"></div>
+        </div>
+        <div class="loading-text">MEMUAT...</div>
+    </div>
+</div>
 
 <div class="container">
   <div class="row justify-content-center">
@@ -66,7 +159,7 @@ foreach ($rawKategori as $row) {
             <div class="mb-4">
               <label class="form-label fw-bold">3. Nama Perpustakaan</label>
               <select name="library_id" id="select_nama" class="form-select" disabled required>
-                <option value="">-- Pilih Sub Jenis Terlebih Dahulu --</option>
+                <option value=""></option> 
               </select>
               <div class="form-text text-muted">Ketik nama perpustakaan untuk mencari.</div>
             </div>
@@ -85,31 +178,49 @@ foreach ($rawKategori as $row) {
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
 <script>
-    // DATA DARI DATABASE (PHP -> JS)
     const libraries = <?= json_encode($libraries) ?>;
-    const strukturJenis = <?= json_encode($strukturJenis) ?>; // Dinamis dari tabel master_kategori
+    const strukturJenis = <?= json_encode($strukturJenis) ?>; 
 
     $(document).ready(function() {
-        $('#select_nama').select2({ theme: 'bootstrap-5', placeholder: '-- Pilih Sub Jenis Terlebih Dahulu --', width: '100%' });
+        // Inisialisasi awal Select2 Nama
+        $('#select_nama').select2({ 
+            theme: 'bootstrap-5', 
+            placeholder: '-- Pilih Sub Jenis Terlebih Dahulu --', 
+            width: '100%' 
+        });
 
-        // 1. Ganti Jenis -> Reset Sub Jenis
+        // 1. Ganti Jenis -> Reset Sub Jenis & Nama
         $('#select_jenis').change(function() {
             const jenis = $(this).val();
             const subDropdown = $('#select_subjenis');
             const namaDropdown = $('#select_nama');
 
-            subDropdown.empty().append('<option value="">-- Pilih Sub Jenis --</option>');
-            namaDropdown.empty().append('<option value="">-- Pilih Sub Jenis Terlebih Dahulu --</option>');
-            subDropdown.prop('disabled', true);
+            // Kosongkan Sub Jenis dulu
+            subDropdown.empty();
+
+            // RESET NAMA & TOMBOL
+            namaDropdown.empty().append('<option value=""></option>');
             namaDropdown.prop('disabled', true);
+            namaDropdown.select2({ 
+                theme: 'bootstrap-5', 
+                placeholder: '-- Pilih Sub Jenis Terlebih Dahulu --', 
+                width: '100%' 
+            });
             $('#btnSubmit').prop('disabled', true);
 
-            // Ambil Subjenis dari Data Dinamis
+            // LOGIKA UTAMA PERBAIKAN:
             if (jenis && strukturJenis[jenis]) {
+                // Jika Jenis Dipilih: Isi Sub Jenis
+                subDropdown.append('<option value="">-- Pilih Sub Jenis --</option>');
                 strukturJenis[jenis].forEach(sub => {
                     subDropdown.append(new Option(sub, sub));
                 });
                 subDropdown.prop('disabled', false);
+            } else {
+                // Jika Jenis KEMBALI KE DEFAULT (Kosong): 
+                // Kembalikan placeholder Sub Jenis ke "Pilih Jenis Terlebih Dahulu"
+                subDropdown.append('<option value="">-- Pilih Jenis Terlebih Dahulu --</option>');
+                subDropdown.prop('disabled', true);
             }
         });
 
@@ -120,25 +231,36 @@ foreach ($rawKategori as $row) {
             namaDropdown.empty();
 
             if (subJenis) {
-                // Filter library berdasarkan kolom 'jenis' di database yang harus cocok dengan subJenis
                 let filteredLibs = libraries.filter(lib => lib.jenis === subJenis);
-
-                // Khusus sekolah, kita bisa tambahkan logika pencarian nama juga jika perlu
-                // Tapi logika standarnya sekarang: Jenis di Libraries == Sub Kategori di Master
-                
-                namaDropdown.append('<option value="">-- Cari Nama Perpustakaan --</option>');
+                namaDropdown.append('<option value=""></option>');
                 
                 if (filteredLibs.length > 0) {
                     filteredLibs.forEach(lib => {
                         namaDropdown.append(new Option(lib.nama, lib.id));
                     });
                     namaDropdown.prop('disabled', false);
+                    // Update Placeholder Jadi "Cari Nama"
+                    namaDropdown.select2({ 
+                        theme: 'bootstrap-5', 
+                        placeholder: '-- Cari Nama Perpustakaan --', 
+                        width: '100%' 
+                    });
                 } else {
-                    namaDropdown.append('<option value="">Tidak ada data ditemukan</option>');
                     namaDropdown.prop('disabled', true);
+                    namaDropdown.select2({ 
+                        theme: 'bootstrap-5', 
+                        placeholder: 'Tidak ada data perpustakaan', 
+                        width: '100%' 
+                    });
                 }
             } else {
+                // Jika Sub Jenis kembali ke default
                 namaDropdown.prop('disabled', true);
+                namaDropdown.select2({ 
+                    theme: 'bootstrap-5', 
+                    placeholder: '-- Pilih Sub Jenis Terlebih Dahulu --', 
+                    width: '100%' 
+                });
             }
         });
 
@@ -159,6 +281,27 @@ foreach ($rawKategori as $row) {
             this.action = (target === 'iplm') ? 'kuisioner_iplm.php' : (target === 'tkm' ? 'kuisioner_tkm.php' : '../index.php');
         });
     });
+
+    /* --- START PRELOADER JS --- */
+
+window.addEventListener("load", function () {
+    const loader = document.getElementById("global-loader");
+    
+    // Beri sedikit jeda 0.5 detik agar animasi terlihat smooth
+    setTimeout(function() {
+        // Tambahkan kelas untuk memicu transisi CSS (opacity 0)
+        loader.classList.add("loader-hidden");
+        
+        // Hapus elemen dari DOM setelah transisi selesai (agar tidak menghalangi klik)
+        loader.addEventListener("transitionend", function() {
+            if (loader.parentNode) {
+                loader.parentNode.removeChild(loader);
+            }
+        });
+    }, 500); 
+});
+
+/* --- END PRELOADER JS --- */
 </script>
 </body>
 </html>

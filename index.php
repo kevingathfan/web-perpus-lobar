@@ -10,12 +10,19 @@
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
 
     <style>
         body {
             background-color: #ffffff;
             font-family: 'Poppins', sans-serif;
             min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .main-wrapper {
+            flex: 1; /* Agar footer selalu di bawah jika konten sedikit */
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -32,36 +39,15 @@
             justify-content: space-between;
             margin-bottom: 40px;
             background: #fff;
-            background-image: linear-gradient(
-                    to bottom,
-                    #000 0px,
-                    #000 1px,
-                    transparent 1px,
-                    transparent 4px,
-                    #000 4px,
-                    #000 5px
-                );
-    background-repeat: no-repeat;
-    background-size: 100% 5px;
-    background-position: bottom;
+            background-image: linear-gradient(to bottom, #000 0px, #000 1px, transparent 1px, transparent 4px, #000 4px, #000 5px);
+            background-repeat: no-repeat;
+            background-size: 100% 5px;
+            background-position: bottom;
         }
 
-        .header-text {
-            text-align: center;
-            flex-grow: 1;
-        }
-
-        .header-text h2 {
-            font-size: 26px;
-            font-weight: 600;
-            margin: 0;
-        }
-
-        .logo-img {
-            height: 150px;
-            width: 150px;
-            object-fit: contain
-        }
+        .header-text { text-align: center; flex-grow: 1; }
+        .header-text h2 { font-size: 26px; font-weight: 600; margin: 0; }
+        .logo-img { height: 150px; width: 150px; object-fit: contain; }
 
         /* ================= INFO BOX ================= */
         .info-box {
@@ -70,25 +56,13 @@
             border: 1px solid #000;
             border-radius: 15px;
             padding: 40px;
-            margin: 40px;
+            margin: 0 40px 40px 40px;
             box-shadow: 0px 4px 6px rgba(0,0,0,0.05);
-        }
-
-        .title-section {
-            margin-bottom: 40px;
             text-align: center;
         }
 
-        .title-section h4 {
-            font-size: 18px;
-            line-height: 1.6;
-            margin: 0;
-            font-weight: 500;
-        }
-
-        .footer-section {
-            margin-top: 50px;
-        }
+        .info-box h4 { font-size: 18px; line-height: 1.6; margin: 0; font-weight: 500; }
+        .info-footer { margin-top: 50px; text-align: left; }
 
         /* ================= CARD MENU ================= */
         .card-menu {
@@ -109,104 +83,257 @@
             overflow: hidden;
         }
 
-        .card-menu h3 {
-            font-size: 20px;
-            font-weight: 500;
-            line-height: 1.4;
-            margin: 0;
-        }
-
-        /* Aksen biru kiri */
+        .card-menu h3 { font-size: 20px; font-weight: 500; line-height: 1.4; margin: 0; }
         .card-menu::before {
-            content: "";
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 6px;
-            height: 100%;
-            background-color: #0d6efd;
-            transform: scaleY(0);
-            transform-origin: top;
-            transition: transform 0.3s ease;
+            content: ""; position: absolute; top: 0; left: 0; width: 6px; height: 100%;
+            background-color: #0d6efd; transform: scaleY(0); transform-origin: top; transition: transform 0.3s ease;
         }
+        .card-menu:hover { transform: translateY(-7px); box-shadow: 0 18px 32px rgba(0, 0, 0, 0.18); }
+        .card-menu:hover::before { transform: scaleY(1); }
 
-        /* Hover Effect */
-        .card-menu:hover {
-            transform: translateY(-7px);
-            box-shadow: 0 18px 32px rgba(0, 0, 0, 0.18);
+        /* Khusus Tombol Pengaduan */
+        .card-aduan {
+            height: auto; min-height: 100px;
+            border-color: #198754; background-color: #f8fff9;
         }
+        .card-aduan::before { background-color: #198754; }
+        .card-aduan h3 { font-size: 18px; font-weight: 600; }
 
-        .card-menu:hover::before {
-            transform: scaleY(1);
+        /* ================= MAIN FOOTER ================= */
+        .main-footer {
+            background-color: #212529; /* Warna Gelap */
+            color: #adb5bd;
+            padding: 60px 0 20px 0;
+            margin-top: auto;
+            border-top: 5px solid #0d6efd;
         }
+        .main-footer h5 { color: #fff; font-weight: 700; margin-bottom: 20px; text-transform: uppercase; font-size: 16px; letter-spacing: 1px; }
+        .main-footer p, .main-footer li { font-size: 14px; line-height: 1.8; }
+        .main-footer a { color: #adb5bd; text-decoration: none; transition: 0.3s; }
+        .main-footer a:hover { color: #fff; padding-left: 5px; }
+        .footer-bottom { border-top: 1px solid #343a40; padding-top: 20px; margin-top: 40px; text-align: center; font-size: 13px; }
+        
+        .map-container iframe { width: 100%; height: 200px; border-radius: 10px; border:0; filter: grayscale(20%); }
+        .map-container iframe:hover { filter: grayscale(0%); transition: 0.5s; }
+        
+        .contact-item { display: flex; align-items: start; gap: 10px; margin-bottom: 15px; }
+        .contact-item i { color: #0d6efd; margin-top: 4px; font-size: 1.1rem; }
+
+        /* 1. Latar Belakang Penuh */
+    #global-loader {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: #ffffff; /* Latar Putih Bersih */
+        z-index: 99999; /* Pastikan di paling atas layer */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: opacity 0.5s ease, visibility 0.5s ease;
+    }
+
+    /* 2. Container Konten */
+    .loader-content {
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    /* 3. Spinner Modern Ganda */
+    .spinner-brand {
+        position: relative;
+        width: 60px;
+        height: 60px;
+        margin-bottom: 15px;
+    }
+
+    .spinner-circle {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        border: 3px solid #e5e7eb; /* Abu-abu muda */
+        border-top-color: #2c3e50; /* Navy Formal */
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    .spinner-circle-inner {
+        position: absolute;
+        top: 15px;
+        left: 15px;
+        width: 30px;
+        height: 30px;
+        border: 3px solid #e5e7eb;
+        border-bottom-color: #34495e; /* Warna Aksen */
+        border-radius: 50%;
+        animation: spin-reverse 1.5s linear infinite;
+    }
+
+    /* 4. Teks Loading Berdenyut */
+    .loading-text {
+        font-family: 'Segoe UI', sans-serif;
+        font-size: 0.85rem;
+        font-weight: 600;
+        letter-spacing: 2px;
+        color: #2c3e50;
+        animation: pulse 1.5s ease-in-out infinite;
+    }
+
+    /* Animasi Keyframes */
+    @keyframes spin { 100% { transform: rotate(360deg); } }
+    @keyframes spin-reverse { 100% { transform: rotate(-360deg); } }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+    /* Kelas untuk Menyembunyikan Loader */
+    .loader-hidden {
+        opacity: 0;
+        visibility: hidden;
+    }
 
     </style>
 </head>
 <body>
-
-    <!-- HEADER -->
-    <div class="header-box">
-        <img src="assets/logo_lobar.png" alt="Logo" class="logo-img">
-
-        <div class="header-text">
-            <h2>Dinas Kearsipan dan Perpustakaan</h2>
-            <p class="mb-0">Kabupaten Lombok Barat</p>
-        </div>
-
-        <img src="assets/logo_disarpus.png" alt="Logo" class="logo-img">
-    </div>
-
-    <!-- TITLE -->
-    <div class="info-box title-section">
-        <h4>
-            Kuisioner Pengukuran Indeks Pembangunan Literasi Masyarakat
-            dan Kegemaran Membaca Kabupaten Lombok Barat
-        </h4>
-    </div>
-
-    <div class="mb-4 fs-5">Pilih Kategori Kuisioner</div>
-
-    <!-- MENU -->
-    <div class="container" style="max-width: 900px;">
-        <div class="row g-4">
-            <div class="col-md-6">
-                <a href="pustakawan/pilih_perpustakaan.php?target=iplm" class="card-menu">
-                    <h3>
-                        Kuisioner Pengukuran<br>
-                        Indeks Pembangunan<br>
-                        Literasi Masyarakat<br>
-                        (IPLM)
-                    </h3>
-                </a>
+    <div id="global-loader">
+        <div class="loader-content">
+            <div class="spinner-brand">
+                <div class="spinner-circle"></div>
+                <div class="spinner-circle-inner"></div>
             </div>
-
-            <div class="col-md-6">
-                <a href="pustakawan/kuisioner_tkm.php?target=tkm" class="card-menu">
-                    <h3>
-                        Kuisioner<br>
-                        Tingkat Kegemaran<br>
-                        Membaca (TKM)
-                    </h3>
-                </a>
-            </div>
+            <div class="loading-text">MEMUAT...</div>
         </div>
     </div>
+    <div class="main-wrapper">
+        <div class="header-box">
+            <img src="assets/logo_lobar.png" alt="Logo" class="logo-img">
+            <div class="header-text">
+                <h2>Dinas Kearsipan dan Perpustakaan</h2>
+                <p class="mb-0">Kabupaten Lombok Barat</p>
+            </div>
+            <img src="assets/logo_disarpus.png" alt="Logo" class="logo-img">
+        </div>
 
-    <!-- FOOTER -->
-    <div class="info-box footer-section">
-        <h6 class="fw-bold">Mengapa kuisioner ini penting?</h6>
-        <p class="text-muted small mb-0">
-            Data yang Anda isikan sangat berharga untuk mengukur kemajuan literasi di daerah kita.
-            Hasil survei ini akan digunakan sebagai dasar pengambilan kebijakan pengembangan
-            perpustakaan di masa depan.
-        </p>
+        <div class="info-box">
+            <h4>
+                Kuisioner Pengukuran Indeks Pembangunan Literasi Masyarakat
+                dan Kegemaran Membaca Kabupaten Lombok Barat
+            </h4>
+        </div>
+
+        <div class="mb-4 fs-5 fw-bold">Pilih Layanan</div>
+
+        <div class="container" style="max-width: 900px;">
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <a href="pustakawan/pilih_perpustakaan.php?target=iplm" class="card-menu">
+                        <h3>
+                            Kuisioner Pengukuran<br>
+                            Indeks Pembangunan<br>
+                            Literasi Masyarakat<br>
+                            (IPLM)
+                        </h3>
+                    </a>
+                </div>
+
+                <div class="col-md-6">
+                    <a href="pustakawan/kuisioner_tkm.php?target=tkm" class="card-menu">
+                        <h3>
+                            Kuisioner<br>
+                            Tingkat Kegemaran<br>
+                            Membaca (TKM)
+                        </h3>
+                    </a>
+                </div>
+
+                <div class="col-12">
+                    <a href="pustakawan/form_pengaduan.php" class="card-menu card-aduan">
+                        <div class="d-flex align-items-center gap-3">
+                            <i class="bi bi-envelope-paper-heart-fill fs-1 text-success"></i>
+                            <div class="text-start">
+                                <h3>Layanan Pengaduan & Saran</h3>
+                                <small class="text-muted">Punya kritik, saran, atau keluhan? Sampaikan kepada kami disini.</small>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="info-box info-footer">
+            <h6 class="fw-bold"><i class="bi bi-info-circle-fill me-2"></i>Mengapa kuisioner ini penting?</h6>
+            <p class="text-muted small mb-0">
+                Data yang Anda isikan sangat berharga untuk mengukur kemajuan literasi di daerah kita.
+                Hasil survei ini akan digunakan sebagai dasar pengambilan kebijakan pengembangan
+                perpustakaan di masa depan.
+            </p>
+        </div>
     </div>
 
-    <div class="mt-5 text-center">
-        <a href="admin/login.php" class="text-muted text-decoration-none small">
-            Masuk sebagai Admin Dinas →
-        </a>
-    </div>
+    <footer class="main-footer">
+        <div class="container">
+            <div class="row g-4">
+                <div class="col-lg-4 col-md-6">
+                    <h5>Tentang Kami</h5>
+                    <p class="mb-4">Dinas Kearsipan dan Perpustakaan Kabupaten Lombok Barat berkomitmen meningkatkan minat baca dan pengelolaan arsip yang profesional.</p>
+                    
+                    <div class="contact-item">
+                        <i class="bi bi-geo-alt-fill"></i>
+                        <span>Jln. Raya BIL KM 21 Giri Menang Gerung, Kode Pos 83363</span>
+                    </div>
+                    <div class="contact-item">
+                        <i class="bi bi-telephone-fill"></i>
+                        <span>(0370) 681239 | Fax (0370) 681250</span>
+                    </div>
+                    <div class="contact-item">
+                        <i class="bi bi-envelope-fill"></i>
+                        <span>disarpus@lombokbaratkab.go.id</span>
+                    </div>
+                </div>
+
+                <div class="col-lg-4 col-md-6 ps-lg-5">
+                    <h5>Tautan Cepat</h5>
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><a href="index.php"><i class="bi bi-chevron-right small me-1"></i> Beranda</a></li>
+                        <li class="mb-2"><a href="pustakawan/pilih_perpustakaan.php?target=iplm"><i class="bi bi-chevron-right small me-1"></i> Survei IPLM</a></li>
+                        <li class="mb-2"><a href="pustakawan/kuisioner_tkm.php?target=tkm"><i class="bi bi-chevron-right small me-1"></i> Survei TKM</a></li>
+                        <li class="mb-2"><a href="pustakawan/form_pengaduan.php"><i class="bi bi-chevron-right small me-1"></i> Pengaduan Masyarakat</a></li>
+                        <li class="mt-3"><a href="admin/login.php" class="text-white fw-bold"><i class="bi bi-lock-fill me-1"></i> Login Administrator</a></li>
+                    </ul>
+                </div>
+
+                <div class="col-lg-4 col-md-12">
+                    <h5>Lokasi Kantor</h5>
+                    <div class="map-container">
+                        <iframe src="https://maps.google.com/maps?q=Perpustakaan+Daerah+Lombok+Barat&t=&z=15&ie=UTF8&iwloc=&output=embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+                    </div>
+                </div>
+            </div>
+
+            <div class="footer-bottom">
+                <p class="mb-0">© <?= date('Y') ?> Dinas Kearsipan dan Perpustakaan Kab. Lombok Barat. All Rights Reserved.</p>
+            </div>
+        </div>
+    </footer>
+    <script>
+    // Hilangkan Preloader saat halaman selesai dimuat sepenuhnya
+    window.addEventListener("load", function () {
+        const loader = document.getElementById("global-loader");
+        
+        // Beri sedikit jeda agar animasi terlihat (opsional, bisa dihapus)
+        setTimeout(function() {
+            loader.classList.add("loader-hidden");
+            
+            // Hapus elemen dari DOM setelah transisi selesai agar tidak menghalangi klik
+            loader.addEventListener("transitionend", function() {
+                if (loader.parentNode) {
+                    loader.parentNode.removeChild(loader);
+                }
+            });
+        }, 500); // Durasi tampil minimal 0.5 detik
+    });
+</script>
 
 </body>
 </html>
