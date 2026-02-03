@@ -270,7 +270,7 @@ $tahunIni = date('Y');
         <div class="nav flex-column">
             <a href="dashboard.php" class="nav-link"><i class="bi bi-grid-fill"></i> DASHBOARD</a>
             <a href="perpustakaan.php" class="nav-link active"><i class="bi bi-building"></i> PERPUSTAKAAN</a>
-            <a href="atur_pertanyaan.php" class="nav-link"><i class="bi bi-file-text"></i> ATUR KUISIONER</a>
+            <a href="atur_pertanyaan.php" class="nav-link"><i class="bi bi-file-text"></i>KUISIONER</a>
             <a href="#" class="nav-link"><i class="bi bi-chat-left-text"></i> PENGADUAN</a>
             <div class="mt-5 pt-5 border-top">
                 <a href="../index.php" class="nav-link text-danger"><i class="bi bi-box-arrow-left"></i> KELUAR</a>

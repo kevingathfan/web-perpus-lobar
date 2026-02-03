@@ -1,5 +1,9 @@
 <?php
 // web-perpus-v1/pustakawan/kuisioner_tkm.php
+
+// [PERBAIKAN] Set Zona Waktu agar sama dengan Admin (WITA)
+date_default_timezone_set('Asia/Makassar');
+
 require '../config/database.php';
 
 // --- CEK STATUS & JADWAL ---
@@ -8,24 +12,25 @@ $settings = $stmtSet->fetchAll(PDO::FETCH_KEY_PAIR);
 
 $mode = $settings['tkm_mode'] ?? 'manual';
 $isOpen = false;
-$pesanTutup = "Perioder Pengisian Kuisioner Belum Di buka";
+$pesanTutup = "Kuesioner TKM sedang DITUTUP oleh Admin.";
 
 if ($mode == 'manual') {
     if (($settings['status_tkm'] ?? 'buka') == 'buka') {
         $isOpen = true;
     }
 } else {
+    // Mode Auto
     $now = date('Y-m-d H:i:s');
-    $start = $settings['tkm_start'] ?? '';
-    $end = $settings['tkm_end'] ?? '';
+    $start = isset($settings['tkm_start']) ? $settings['tkm_start'] : '';
+    $end   = isset($settings['tkm_end']) ? $settings['tkm_end'] : '';
 
     if ($start && $end) {
         if ($now >= $start && $now <= $end) {
             $isOpen = true;
         } elseif ($now < $start) {
-            $pesanTutup = "Kuesioner belum dibuka.<br>Jadwal Buka: <strong>" . date('d M Y H:i', strtotime($start)) . "</strong>";
+            $pesanTutup = "Kuesioner belum dibuka.<br>Jadwal Buka: <strong>" . date('d M Y H:i', strtotime($start)) . " WITA</strong>";
         } else {
-            $pesanTutup = "Kuesioner sudah ditutup.<br>Batas Akhir: <strong>" . date('d M Y H:i', strtotime($end)) . "</strong>";
+            $pesanTutup = "Kuesioner sudah ditutup.<br>Batas Akhir: <strong>" . date('d M Y H:i', strtotime($end)) . " WITA</strong>";
         }
     } else {
         $pesanTutup = "Jadwal pengisian belum diatur oleh admin.";
@@ -76,7 +81,7 @@ $auto_isi = [];
 </head>
 <body>
     <div class="container py-5" style="max-width: 900px;">
-        <a href="pilih_perpustakaan.php?target=tkm" class="text-decoration-none text-dark fw-bold mb-3 d-inline-block">&larr; Kembali</a>
+        <a href="../index.php?target=tkm" class="text-decoration-none text-dark fw-bold mb-3 d-inline-block">&larr; Kembali</a>
         
         <h2 class="text-center fw-bold mb-4">FORMULIR TKM</h2>
         

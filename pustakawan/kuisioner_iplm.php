@@ -1,5 +1,9 @@
 <?php
 // web-perpus-v1/pustakawan/kuisioner_iplm.php
+
+// [PERBAIKAN] Set Zona Waktu agar sama dengan Admin (WITA)
+date_default_timezone_set('Asia/Makassar');
+
 require '../config/database.php';
 
 // --- CEK STATUS & JADWAL ---
@@ -8,7 +12,7 @@ $settings = $stmtSet->fetchAll(PDO::FETCH_KEY_PAIR);
 
 $mode = $settings['iplm_mode'] ?? 'manual';
 $isOpen = false;
-$pesanTutup = "Periode Pengisian Kuisioner Belum Di buka";
+$pesanTutup = "Kuesioner IPLM sedang DITUTUP oleh Admin.";
 
 if ($mode == 'manual') {
     // Mode Manual: Cek status_iplm
@@ -18,16 +22,18 @@ if ($mode == 'manual') {
 } else {
     // Mode Auto: Cek Tanggal
     $now = date('Y-m-d H:i:s');
-    $start = $settings['iplm_start'] ?? '';
-    $end = $settings['iplm_end'] ?? '';
+    
+    // Pastikan format tanggal dari DB aman
+    $start = isset($settings['iplm_start']) ? $settings['iplm_start'] : '';
+    $end   = isset($settings['iplm_end']) ? $settings['iplm_end'] : '';
 
     if ($start && $end) {
         if ($now >= $start && $now <= $end) {
             $isOpen = true;
         } elseif ($now < $start) {
-            $pesanTutup = "Kuesioner belum dibuka.<br>Jadwal Buka: <strong>" . date('d M Y H:i', strtotime($start)) . "</strong>";
+            $pesanTutup = "Kuesioner belum dibuka.<br>Jadwal Buka: <strong>" . date('d M Y H:i', strtotime($start)) . " WITA</strong>";
         } else {
-            $pesanTutup = "Kuesioner sudah ditutup.<br>Batas Akhir: <strong>" . date('d M Y H:i', strtotime($end)) . "</strong>";
+            $pesanTutup = "Kuesioner sudah ditutup.<br>Batas Akhir: <strong>" . date('d M Y H:i', strtotime($end)) . " WITA</strong>";
         }
     } else {
         $pesanTutup = "Jadwal pengisian belum diatur oleh admin.";

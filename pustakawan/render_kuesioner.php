@@ -1,7 +1,6 @@
 <?php
 // web-perpus-v1/pustakawan/render_kuesioner.php
 
-// Tambahkan parameter ke-4: $defaults (array)
 function render_dynamic_form($pdo, $jenis_kuesioner, $library_id, $defaults = []) {
     
     // 1. AMBIL DATA DARI DB
@@ -14,7 +13,7 @@ function render_dynamic_form($pdo, $jenis_kuesioner, $library_id, $defaults = []
         return;
     }
 
-    // 2. GROUPING MANUAL
+    // 2. GROUPING PERTANYAAN
     $pertanyaan = [];
     foreach ($raw_data as $row) {
         $bagian = $row['kategori_bagian'];
@@ -22,8 +21,12 @@ function render_dynamic_form($pdo, $jenis_kuesioner, $library_id, $defaults = []
         $pertanyaan[$bagian][] = $row;
     }
 
-    // 3. RENDER FORM
-    echo '<form method="POST" action="proses_simpan.php">';
+    // --- INCLUDE SWEETALERT (Untuk Pop-up) ---
+    echo '<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>';
+
+    // --- FORM PEMBUKA ---
+    // Tambahkan ID="formKuesioner" untuk diakses JavaScript
+    echo '<form id="formKuesioner" method="POST" action="../proses_simpan.php">';
     echo '<input type="hidden" name="jenis_kuesioner" value="'.$jenis_kuesioner.'">';
     echo '<input type="hidden" name="library_id" value="'.$library_id.'">';
 
@@ -35,18 +38,27 @@ function render_dynamic_form($pdo, $jenis_kuesioner, $library_id, $defaults = []
         foreach ($items as $p) {
             $id_soal = isset($p['id']) ? $p['id'] : 0;
             $name = "jawaban[" . $id_soal . "]";
-            $teks_soal = $p['teks_pertanyaan']; // Ambil teks pertanyaan untuk dicocokkan
+            $teks_soal = $p['teks_pertanyaan'];
+            
+            // Cek Kode Kunci (untuk auto-fill yang lebih aman)
+            $kode_kunci = isset($p['kode_kunci']) ? $p['kode_kunci'] : '';
             
             // --- LOGIKA OTOMATIS & READONLY ---
             $val = '';
             $attr = '';
             $style = '';
 
-            // Cek apakah soal ini ada di daftar defaults?
-            if (isset($defaults[$teks_soal])) {
-                $val = htmlspecialchars($defaults[$teks_soal]); // Isi nilai otomatis
-                $attr = 'readonly'; // Kunci agar tidak bisa diedit
-                $style = 'background-color: #e9ecef; cursor: not-allowed; font-weight:bold;'; // Ubah warna jadi abu
+            // Prioritas 1: Cek Kode Kunci (Misal: 'core_nama')
+            if ($kode_kunci && isset($defaults[$kode_kunci])) {
+                $val = htmlspecialchars($defaults[$kode_kunci]);
+                $attr = 'readonly';
+                $style = 'background-color: #e9ecef; cursor: not-allowed; font-weight:bold;';
+            } 
+            // Prioritas 2: Cek Teks Pertanyaan (Fallback lama)
+            elseif (isset($defaults[$teks_soal])) {
+                $val = htmlspecialchars($defaults[$teks_soal]);
+                $attr = 'readonly';
+                $style = 'background-color: #e9ecef; cursor: not-allowed; font-weight:bold;';
             }
             // ----------------------------------
 
@@ -65,12 +77,10 @@ function render_dynamic_form($pdo, $jenis_kuesioner, $library_id, $defaults = []
                 echo '<label class="form-label">' . htmlspecialchars($teks_soal) . '</label>';
                 
                 if ($p['tipe_input'] == 'textarea') {
-                    // Jika textarea, value ditaruh di antara tag
                     echo '<textarea name="'.$name.'" class="form-control" rows="2" '.$attr.' style="'.$style.'">'.$val.'</textarea>';
                 } else {
                     $type = ($p['tipe_input'] == 'number') ? 'number' : 'text';
                     $min_attr = ($type == 'number') ? 'min="0"' : '';
-                    // Masukkan value, readonly, dan style
                     echo '<input type="'.$type.'" name="'.$name.'" class="form-control" value="'.$val.'" '.$min_attr.' '.$attr.' style="'.$style.'" required>';
                 }
             }
@@ -79,7 +89,47 @@ function render_dynamic_form($pdo, $jenis_kuesioner, $library_id, $defaults = []
         echo '</div></div>';
     }
 
-    echo '<button type="submit" class="btn btn-dark w-100 py-3 fw-bold mt-3">KIRIM DATA</button>';
+    // --- TOMBOL KIRIM DENGAN KONFIRMASI ---
+    // Ubah type="button" dan tambahkan onclick="konfirmasiKirim()"
+    echo '<button type="button" onclick="konfirmasiKirim()" class="btn btn-dark w-100 py-3 fw-bold mt-3">KIRIM DATA</button>';
     echo '</form>';
+
+    // --- SCRIPT JAVASCRIPT KONFIRMASI ---
+    echo "
+    <script>
+    function konfirmasiKirim() {
+        const form = document.getElementById('formKuesioner');
+        
+        // 1. Cek Validasi HTML5 (Required fields)
+        if (!form.checkValidity()) {
+            form.reportValidity(); // Tampilkan error bawaan browser (misal: 'Please fill out this field')
+            return;
+        }
+
+        // 2. Tampilkan Pop-up SweetAlert
+        Swal.fire({
+            title: 'Apakah Anda Yakin?',
+            text: 'Pastikan data yang Anda isi sudah benar. Data akan tersimpan untuk periode bulan ini.',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#212529', // Warna Dark (Bootstrap)
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Ya, Kirim Data!',
+            cancelButtonText: 'Batal'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // 3. Jika User klik Ya, Submit Form
+                Swal.fire({
+                    title: 'Mengirim...',
+                    text: 'Mohon tunggu sebentar',
+                    allowOutsideClick: false,
+                    didOpen: () => { Swal.showLoading() }
+                });
+                form.submit();
+            }
+        });
+    }
+    </script>
+    ";
 }
 ?>
