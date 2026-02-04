@@ -25,6 +25,8 @@ $library = $stmt->fetch();
     <title>Beranda - Dinas Kearsipan dan Perpustakaan</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../assets/loader.css">
+    <link rel="stylesheet" href="../assets/public-responsive.css">
 
     <style>
         body {
@@ -151,6 +153,7 @@ $library = $stmt->fetch();
     </style>
 </head>
 <body>
+    <?php include __DIR__ . '/../config/loader.php'; ?>
 
     <div class="header-box">
         <img src="https://upload.wikimedia.org/wikipedia/commons/0/0c/Lambang_Kabupaten_Lombok_Barat.png" alt="Logo Lobar" class="logo-img">
@@ -199,5 +202,6 @@ $library = $stmt->fetch();
         </a>
     </div>
 
+    <script src="../assets/loader.js"></script>
 </body>
 </html>

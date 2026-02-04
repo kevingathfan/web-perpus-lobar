@@ -2,6 +2,7 @@
 // web-perpus-v1/admin/export_data.php
 session_start();
 require '../config/database.php';
+require '../config/admin_auth.php';
 
 // 1. TANGKAP PARAMETER JENIS (iplm atau tkm)
 $jenis = isset($_GET['jenis']) ? $_GET['jenis'] : '';

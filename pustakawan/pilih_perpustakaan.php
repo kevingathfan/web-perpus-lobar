@@ -29,103 +29,13 @@ foreach ($rawKategori as $row) {
   <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/loader.css">
+  <link rel="stylesheet" href="../assets/public-responsive.css">
   <style> body { background-color: #f8f9fa; font-family: 'Poppins', sans-serif; display: flex; align-items: center; min-height: 100vh; } .card { border-radius: 15px; border: 1px solid #ddd; box-shadow: 0 4px 6px rgba(0,0,0,0.05); } 
-    /* --- START PRELOADER CSS --- */
-
-/* 1. Container Full Screen */
-#global-loader {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: #ffffff; /* Latar Putih Bersih */
-    z-index: 99999; /* Pastikan di layer paling atas */
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: opacity 0.5s ease, visibility 0.5s ease;
-}
-
-/* 2. Wrapper Konten (Spinner + Teks) */
-.loader-content {
-    text-align: center;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-
-/* 3. Spinner Modern Ganda */
-.spinner-brand {
-    position: relative;
-    width: 60px;
-    height: 60px;
-    margin-bottom: 15px;
-}
-
-.spinner-circle {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    border: 3px solid #e5e7eb; /* Abu-abu muda */
-    border-top-color: #2c3e50; /* Warna Utama (Navy) */
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-}
-
-.spinner-circle-inner {
-    position: absolute;
-    top: 15px;
-    left: 15px;
-    width: 30px;
-    height: 30px;
-    border: 3px solid #e5e7eb;
-    border-bottom-color: #34495e; /* Warna Aksen (Dark Slate) */
-    border-radius: 50%;
-    animation: spin-reverse 1.5s linear infinite;
-}
-
-/* 4. Teks Loading Berdenyut */
-.loading-text {
-    font-family: 'Segoe UI', sans-serif;
-    font-size: 0.85rem;
-    font-weight: 600;
-    letter-spacing: 2px;
-    color: #2c3e50;
-    animation: pulse 1.5s ease-in-out infinite;
-}
-
-/* 5. Kelas Utilitas untuk Menyembunyikan Loader */
-.loader-hidden {
-    opacity: 0;
-    visibility: hidden;
-}
-
-/* 6. Animasi Keyframes */
-@keyframes spin { 
-    100% { transform: rotate(360deg); } 
-}
-@keyframes spin-reverse { 
-    100% { transform: rotate(-360deg); } 
-}
-@keyframes pulse { 
-    0%, 100% { opacity: 1; } 
-    50% { opacity: 0.5; } 
-}
-
-/* --- END PRELOADER CSS --- */
   </style>
 </head>
 <body>
-  <div id="global-loader">
-    <div class="loader-content">
-        <div class="spinner-brand">
-            <div class="spinner-circle"></div>
-            <div class="spinner-circle-inner"></div>
-        </div>
-        <div class="loading-text">MEMUAT...</div>
-    </div>
-</div>
+  <?php include __DIR__ . '/../config/loader.php'; ?>
 
 <div class="container">
   <div class="row justify-content-center">
@@ -282,26 +192,7 @@ foreach ($rawKategori as $row) {
         });
     });
 
-    /* --- START PRELOADER JS --- */
-
-window.addEventListener("load", function () {
-    const loader = document.getElementById("global-loader");
-    
-    // Beri sedikit jeda 0.5 detik agar animasi terlihat smooth
-    setTimeout(function() {
-        // Tambahkan kelas untuk memicu transisi CSS (opacity 0)
-        loader.classList.add("loader-hidden");
-        
-        // Hapus elemen dari DOM setelah transisi selesai (agar tidak menghalangi klik)
-        loader.addEventListener("transitionend", function() {
-            if (loader.parentNode) {
-                loader.parentNode.removeChild(loader);
-            }
-        });
-    }, 500); 
-});
-
-/* --- END PRELOADER JS --- */
 </script>
+<script src="../assets/loader.js"></script>
 </body>
 </html>

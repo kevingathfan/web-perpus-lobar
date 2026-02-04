@@ -2,6 +2,7 @@
 // admin/perpustakaan.php
 session_start();
 require '../config/database.php';
+require '../config/admin_auth.php';
 
 // --- 0. AMBIL MASTER KATEGORI ---
 $stmtK = $pdo->query("SELECT * FROM master_kategori ORDER BY kategori, sub_kategori");
@@ -33,6 +34,7 @@ if (isset($_GET['ajax_action']) && $_GET['ajax_action'] == 'load_table') {
     $search = isset($_GET['search']) ? trim($_GET['search']) : '';
     $filterKat = isset($_GET['kategori']) ? trim($_GET['kategori']) : '';
     $filterSub = isset($_GET['subjenis']) ? trim($_GET['subjenis']) : '';
+    $filterStatus = isset($_GET['status_iplm']) ? trim($_GET['status_iplm']) : '';
     
     // Status Filter Params (Bulan & Tahun) - KHUSUS IPLM
     $filterBulan = isset($_GET['bulan']) ? $_GET['bulan'] : date('m');
@@ -58,6 +60,11 @@ if (isset($_GET['ajax_action']) && $_GET['ajax_action'] == 'load_table') {
         $whereParts[] = "jenis = :sub";
         $params[':sub'] = $filterSub;
     }
+    if ($filterStatus === 'sudah') {
+        $whereParts[] = "(SELECT COUNT(*) FROM trans_header th WHERE th.library_id = l.id AND th.jenis_kuesioner = 'IPLM' AND th.periode_bulan = :bln AND th.periode_tahun = :thn) > 0";
+    } elseif ($filterStatus === 'belum') {
+        $whereParts[] = "(SELECT COUNT(*) FROM trans_header th WHERE th.library_id = l.id AND th.jenis_kuesioner = 'IPLM' AND th.periode_bulan = :bln AND th.periode_tahun = :thn) = 0";
+    }
 
     $whereClause = $whereParts ? "WHERE " . implode(" AND ", $whereParts) : "";
 
@@ -65,7 +72,7 @@ if (isset($_GET['ajax_action']) && $_GET['ajax_action'] == 'load_table') {
     $params[':thn'] = $filterTahun;
 
     // Hitung Total Data
-    $sqlCount = "SELECT COUNT(*) FROM libraries $whereClause";
+    $sqlCount = "SELECT COUNT(*) FROM libraries l $whereClause";
     $stmtCount = $pdo->prepare($sqlCount);
     foreach ($params as $key => $val) {
         if (strpos($sqlCount, $key) !== false) $stmtCount->bindValue($key, $val);
@@ -171,18 +178,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             elseif ($_POST['aksi'] == 'import_csv') {
                 if (isset($_FILES['file_csv']) && $_FILES['file_csv']['error'] == 0) {
                     $file = $_FILES['file_csv']['tmp_name'];
+                    $orig = $_FILES['file_csv']['name'] ?? '';
+                    $size = $_FILES['file_csv']['size'] ?? 0;
+                    $ext = strtolower(pathinfo($orig, PATHINFO_EXTENSION));
+
+                    if ($ext !== 'csv') {
+                        throw new Exception("File harus berformat .csv");
+                    }
+                    if ($size > 2 * 1024 * 1024) {
+                        throw new Exception("Ukuran file maksimal 2MB.");
+                    }
+                    $finfo = new finfo(FILEINFO_MIME_TYPE);
+                    $mime = $finfo->file($file);
+                    $allowed_mime = ['text/plain', 'text/csv', 'application/csv', 'application/vnd.ms-excel'];
+                    if ($mime && !in_array($mime, $allowed_mime, true)) {
+                        throw new Exception("Tipe file tidak valid.");
+                    }
+
                     $handle = fopen($file, "r");
-                    fgetcsv($handle); 
+                    $header = fgetcsv($handle);
+                    if (!$header || count($header) < 3) {
+                        fclose($handle);
+                        throw new Exception("Format CSV tidak valid. Harus memiliki minimal 3 kolom: Nama, Kategori, Subjenis.");
+                    }
                     
                     $sukses = 0; $gagal = 0;
                     $stmt = $pdo->prepare("INSERT INTO libraries (nama, kategori, jenis) VALUES (?, ?, ?)");
                     
                     while (($row = fgetcsv($handle, 1000, ",")) !== FALSE) {
+                        if (count($row) < 3) { $gagal++; continue; }
                         $nama = trim($row[0] ?? '');
                         $rawKat = trim($row[1] ?? 'Umum');
                         $rawSub = trim($row[2] ?? '');
                         
-                        if (!empty($nama)) {
+                        $nama_ok = ($nama !== '' && mb_strlen($nama) >= 3 && preg_match('/[A-Za-z]/', $nama));
+                        if ($nama_ok) {
                             if (isKategoriValid($rawKat, $rawSub, $validasiMap)) {
                                 $keyKat = strtoupper($rawKat);
                                 $keySub = strtoupper($rawSub);
@@ -196,7 +226,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     $sukses++;
                                 }
                             } else { $gagal++; }
-                        }
+                        } else { $gagal++; }
                     }
                     fclose($handle);
                     $pesan = "Import Selesai. Masuk: $sukses. Gagal: $gagal";
@@ -237,16 +267,37 @@ $bulanList = [
     '09'=>'September','10'=>'Oktober','11'=>'November','12'=>'Desember'
 ];
 $tahunIni = date('Y');
+
+// --- RINCIAN STATISTIK DATA (BULANAN) ---
+$bulan_pilih = isset($_GET['bulan']) ? $_GET['bulan'] : date('m');
+$tahun_pilih = isset($_GET['tahun']) ? $_GET['tahun'] : date('Y');
+$label_periode = $bulanList[$bulan_pilih] . " " . $tahun_pilih;
+
+try { 
+    $stmt = $pdo->query("SELECT COUNT(*) FROM libraries"); 
+    $total_perpus = $stmt->fetchColumn(); 
+} catch (Exception $e) { $total_perpus = 0; }
+
+try {
+    $stmtIplm = $pdo->prepare("SELECT COUNT(*) FROM trans_header WHERE jenis_kuesioner = 'IPLM' AND periode_bulan = :bln AND periode_tahun = :thn");
+    $stmtIplm->execute([':bln' => $bulan_pilih, ':thn' => $tahun_pilih]); 
+    $total_iplm = $stmtIplm->fetchColumn();
+} catch (Exception $e) { $total_iplm = 0; }
+
+$belum_iplm = max(0, $total_perpus - $total_iplm);
 ?>
 
 <!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Manajemen Perpustakaan - Admin</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="../assets/loader.css">
+    <link rel="stylesheet" href="../assets/admin-responsive.css">
     
     <style>
         body { font-family: 'Poppins', sans-serif; background-color: #f8f9fa; }
@@ -256,6 +307,44 @@ $tahunIni = date('Y');
         .nav-link:hover, .nav-link.active { background-color: #000; color: #fff; }
         .main-content { margin-left: 260px; padding: 40px 50px; }
         .card-clean { background-color: #ffffff; border: 1px solid #e0e0e0; border-radius: 16px; padding: 25px; box-shadow: 0 5px 20px rgba(0,0,0,0.03); }
+        .stat-box { background-color: #ffffff; border: 1px solid #dee2e6; border-radius: 14px; padding: 16px; text-align: left; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; }
+        .stat-box.highlight { background-color: #000; color: #fff; border: 1px solid #000; }
+        .stat-number { font-size: 24px; font-weight: 800; line-height: 1.2; }
+        .stats-compact .card-clean { padding: 18px; }
+        .stats-compact .stat-box { padding: 12px; }
+        .stats-compact .stat-label { font-size: 13px; color: #495057; }
+        .stats-compact .stat-number { font-size: 24px; }
+        .stat-total { position: relative; overflow: hidden; border: 1px solid #111; background: #111827; box-shadow: 0 8px 18px rgba(0,0,0,0.15); }
+        .stat-total .stat-label { letter-spacing: 0.5px; text-transform: uppercase; font-size: 12px; color: #e5e7eb; }
+        .stat-total .stat-number { font-size: 30px; color: #ffffff; }
+        .stat-total .stat-sub { font-size: 13px; color: #d1d5db; opacity: 1; }
+        .stat-total .stat-badge {
+            position: absolute;
+            right: 12px;
+            top: 12px;
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+        .stat-mini {
+            border: 1px solid #e9ecef;
+            background: #ffffff;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.04);
+        }
+        .stat-mini .stat-label { font-size: 13px; color: #343a40; }
+        .stat-mini .stat-number { font-size: 24px; color: #111; }
+        .stat-mini .icon-box { opacity: 1; color: #ffffff; }
+        .stat-mini.success .icon-box { color: #198754; }
+        .stat-mini.danger .icon-box { color: #dc3545; }
+        .stat-mini .icon-box { font-size: 22px; }
+        .stat-mini.success { border-left: 4px solid #198754; }
+        .stat-mini.danger { border-left: 4px solid #dc3545; }
+        .btn-filter { background-color: #f1f3f5; color: #333; border: none; padding: 8px 16px; border-radius: 30px; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; cursor: pointer; }
         .nav-tabs .nav-link { color: #666; font-weight: 600; border: none; border-bottom: 3px solid transparent; }
         .nav-tabs .nav-link.active { color: #000; border-bottom: 3px solid #000; background: transparent; }
         .badge-kategori { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
@@ -264,25 +353,35 @@ $tahunIni = date('Y');
     </style>
 </head>
 <body>
+    <?php include __DIR__ . '/../config/loader.php'; ?>
+    <div class="sidebar-backdrop" onclick="toggleSidebar(false)"></div>
 
     <nav class="sidebar">
-        <div class="sidebar-header">DISARPUS</div>
+        <div class="d-flex justify-content-between align-items-center sidebar-header">
+            <span>DISARPUS</span>
+            <button class="btn btn-sm btn-outline-dark d-lg-none" onclick="toggleSidebar(false)"><i class="bi bi-x-lg"></i></button>
+        </div>
         <div class="nav flex-column">
             <a href="dashboard.php" class="nav-link"><i class="bi bi-grid-fill"></i> DASHBOARD</a>
             <a href="perpustakaan.php" class="nav-link active"><i class="bi bi-building"></i> PERPUSTAKAAN</a>
+            <a href="hasil_kuisioner.php" class="nav-link"><i class="bi bi-table"></i> HASIL KUISIONER</a>
             <a href="atur_pertanyaan.php" class="nav-link"><i class="bi bi-file-text"></i>KUISIONER</a>
             <a href="pengaduan.php" class="nav-link"><i class="bi bi-chat-left-text"></i> PENGADUAN</a>
+            <a href="users.php" class="nav-link"><i class="bi bi-people-fill"></i> ADMIN</a>
             <div class="mt-5 pt-5 border-top">
-                <a href="../index.php" class="nav-link text-danger"><i class="bi bi-box-arrow-left"></i> KELUAR</a>
+                <a href="logout.php" class="nav-link text-danger"><i class="bi bi-box-arrow-left"></i> KELUAR</a>
             </div>
         </div>
     </nav>
 
     <main class="main-content">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <div>
-                <h1 class="h2 fw-bold m-0">Manajemen Perpustakaan</h1>
-                <p class="text-muted m-0">Kelola data unit perpustakaan dan cek status IPLM</p>
+        <div class="d-flex justify-content-between align-items-center mb-4 page-header">
+            <div class="d-flex align-items-center gap-2">
+                <button class="btn btn-dark btn-sm d-lg-none" onclick="toggleSidebar(true)"><i class="bi bi-list"></i></button>
+                <div>
+                    <h1 class="h2 fw-bold m-0 page-title">Manajemen Perpustakaan</h1>
+                    <p class="text-muted m-0 page-subtitle">Kelola data unit perpustakaan dan cek status IPLM</p>
+                </div>
             </div>
         </div>
 
@@ -292,6 +391,51 @@ $tahunIni = date('Y');
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
         <?php endif; ?>
+
+        <div class="d-flex justify-content-between align-items-center mb-3 border-start border-4 border-dark ps-3">
+            <div>
+                <h5 class="fw-bold m-0">Rincian Statistik Data</h5>
+                <small class="text-muted">Periode: <?= $label_periode ?></small>
+            </div>
+            <button type="button" class="btn-filter" data-bs-toggle="modal" data-bs-target="#filterModal">
+                <i class="bi bi-funnel"></i> Filter Periode
+            </button>
+        </div>
+        
+        <div class="row g-4 mb-4 stats-compact">
+            <div class="col-12">
+                <div class="card-clean bg-light border-0">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="fw-bold m-0"><i class="bi bi-book-half me-2"></i>Data IPLM</h6>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-5">
+                            <div class="stat-box stat-total text-start align-items-start px-3">
+                                <span class="stat-label mb-2">Total Perpustakaan</span>
+                                <span class="stat-number"><?= $total_perpus ?></span>
+                                <small class="stat-sub mt-2">Unit Terdaftar</small>
+                            </div>
+                        </div>
+                        <div class="col-md-7">
+                            <div class="row g-3 h-100">
+                                <div class="col-12">
+                                    <div class="stat-box stat-mini success flex-row justify-content-between px-3">
+                                        <div class="text-start"><span class="stat-number d-block"><?= $total_iplm ?></span><span class="stat-label">Sudah Mengisi</span></div>
+                                        <div class="icon-box"><i class="bi bi-check-circle"></i></div>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="stat-box stat-mini danger flex-row justify-content-between px-3">
+                                        <div class="text-start"><span class="stat-number d-block text-danger"><?= $belum_iplm ?></span><span class="stat-label">Belum Mengisi</span></div>
+                                        <div class="icon-box"><i class="bi bi-exclamation-circle"></i></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <div class="card card-clean p-4">
             <ul class="nav nav-tabs mb-4" id="myTab" role="tablist">
@@ -312,14 +456,14 @@ $tahunIni = date('Y');
                         <div class="col-md-2">
                             <select id="filterBulan" class="form-select filter-select bg-white">
                                 <?php foreach($bulanList as $k => $v): ?>
-                                    <option value="<?= $k ?>" <?= ($k == date('m')) ? 'selected' : '' ?>><?= $v ?></option>
+                                    <option value="<?= $k ?>" <?= ($k == $bulan_pilih) ? 'selected' : '' ?>><?= $v ?></option>
                                 <?php endforeach; ?>
                             </select>
                         </div>
                         <div class="col-md-2">
                             <select id="filterTahun" class="form-select filter-select bg-white">
                                 <?php for($t=$tahunIni; $t>=$tahunIni-2; $t--): ?>
-                                    <option value="<?= $t ?>"><?= $t ?></option>
+                                    <option value="<?= $t ?>" <?= ($t == $tahun_pilih) ? 'selected' : '' ?>><?= $t ?></option>
                                 <?php endfor; ?>
                             </select>
                         </div>
@@ -341,6 +485,18 @@ $tahunIni = date('Y');
                             <select id="filterSubjenis" class="form-select filter-select">
                                 <option value="">Semua Sub Jenis</option>
                             </select>
+                        </div>
+                        <div class="col-md-2">
+                            <select id="filterStatus" class="form-select filter-select">
+                                <option value="">Semua Status</option>
+                                <option value="sudah">Sudah Mengisi</option>
+                                <option value="belum">Belum Mengisi</option>
+                            </select>
+                        </div>
+                        <div class="col-md-1">
+                            <button class="btn btn-outline-secondary fw-bold rounded-pill w-100" type="button" onclick="resetFilters()">
+                                <i class="bi bi-arrow-counterclockwise"></i>
+                            </button>
                         </div>
                         <div class="col-md-2 text-end">
                             <button class="btn btn-dark fw-bold rounded-pill w-100" onclick="openModalLib()">
@@ -374,6 +530,7 @@ $tahunIni = date('Y');
                             <div class="card bg-light border-0 p-3 h-100">
                                 <h6 class="fw-bold mb-3">Tambah Jenis Baru</h6>
                                 <form method="POST">
+                                    <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
                                     <input type="hidden" name="form_type" value="category">
                                     <input type="hidden" name="aksi" value="tambah">
                                     <div class="mb-3">
@@ -406,6 +563,7 @@ $tahunIni = date('Y');
                                             <td><?= htmlspecialchars($row['sub_kategori']) ?></td>
                                             <td class="text-center">
                                                 <form method="POST" onsubmit="return confirm('Hapus jenis ini?')" style="display:inline;">
+                                                    <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
                                                     <input type="hidden" name="form_type" value="category">
                                                     <input type="hidden" name="aksi" value="hapus">
                                                     <input type="hidden" name="id" value="<?= $row['id'] ?>">
@@ -425,6 +583,35 @@ $tahunIni = date('Y');
         </div>
     </main>
 
+    <div class="modal fade" id="filterModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content rounded-4 border-0 p-3">
+                <div class="modal-header border-0"><h5 class="modal-title fw-bold">Pilih Periode</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                <div class="modal-body">
+                    <form action="" method="GET">
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-muted">BULAN</label>
+                            <select name="bulan" class="form-select border-secondary">
+                                <?php foreach($bulanList as $key => $val): ?>
+                                    <option value="<?= $key ?>" <?= ($key == $bulan_pilih) ? 'selected' : '' ?>><?= $val ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label small fw-bold text-muted">TAHUN</label>
+                            <select name="tahun" class="form-select border-secondary">
+                                <?php for($t = date('Y'); $t >= date('Y') - 2; $t--): ?>
+                                    <option value="<?= $t ?>" <?= ($t == $tahun_pilih) ? 'selected' : '' ?>><?= $t ?></option>
+                                <?php endfor; ?>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-dark w-100 rounded-pill fw-bold">Terapkan Filter</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="modal fade" id="modalLib" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content rounded-4 border-0">
@@ -442,6 +629,7 @@ $tahunIni = date('Y');
                     <div class="tab-content">
                         <div class="tab-pane fade show active" id="tab-manual">
                             <form method="POST">
+                                <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
                                 <input type="hidden" name="form_type" value="library">
                                 <input type="hidden" name="aksi" id="formAksi" value="tambah">
                                 <input type="hidden" name="id" id="formId">
@@ -472,6 +660,7 @@ $tahunIni = date('Y');
                         </div>
                         <div class="tab-pane fade" id="tab-csv">
                             <form method="POST" enctype="multipart/form-data">
+                                <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
                                 <input type="hidden" name="form_type" value="library">
                                 <input type="hidden" name="aksi" value="import_csv">
                                 <div class="alert alert-info small">Format: Nama, Kategori, Subjenis. <br>Nama akan otomatis dikapitalisasi.</div>
@@ -486,6 +675,7 @@ $tahunIni = date('Y');
     </div>
 
     <form id="formHapus" method="POST" style="display:none;">
+        <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
         <input type="hidden" name="form_type" value="library">
         <input type="hidden" name="aksi" value="hapus">
         <input type="hidden" name="id" id="hapusId">
@@ -493,6 +683,14 @@ $tahunIni = date('Y');
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        function toggleSidebar(open) {
+            document.body.classList.toggle('sidebar-open', open);
+        }
+
+        document.querySelectorAll('.sidebar .nav-link').forEach((link) => {
+            link.addEventListener('click', () => toggleSidebar(false));
+        });
+
         const subJenisData = <?= json_encode($strukturJenis) ?>;
         const modalLib = new bootstrap.Modal(document.getElementById('modalLib'));
         let debounceTimer;
@@ -501,13 +699,14 @@ $tahunIni = date('Y');
             const search = document.getElementById('liveSearch').value;
             const kat = document.getElementById('filterKategori').value;
             const sub = document.getElementById('filterSubjenis').value;
+            const status = document.getElementById('filterStatus').value;
             const bln = document.getElementById('filterBulan').value;
             const thn = document.getElementById('filterTahun').value;
             const tbody = document.getElementById('tableBody');
 
             tbody.innerHTML = '<tr><td colspan="6" class="text-center py-5"><div class="spinner-border text-dark"></div></td></tr>';
 
-            const url = `perpustakaan.php?ajax_action=load_table&search=${encodeURIComponent(search)}&kategori=${encodeURIComponent(kat)}&subjenis=${encodeURIComponent(sub)}&bulan=${bln}&tahun=${thn}&page=${page}`;
+            const url = `perpustakaan.php?ajax_action=load_table&search=${encodeURIComponent(search)}&kategori=${encodeURIComponent(kat)}&subjenis=${encodeURIComponent(sub)}&status_iplm=${encodeURIComponent(status)}&bulan=${bln}&tahun=${thn}&page=${page}`;
 
             fetch(url)
                 .then(response => response.text())
@@ -535,6 +734,7 @@ $tahunIni = date('Y');
             loadTable(1);
         });
         document.getElementById('filterSubjenis').addEventListener('change', () => loadTable(1));
+        document.getElementById('filterStatus').addEventListener('change', () => loadTable(1));
         document.getElementById('filterBulan').addEventListener('change', () => loadTable(1));
         document.getElementById('filterTahun').addEventListener('change', () => loadTable(1));
 
@@ -593,6 +793,18 @@ $tahunIni = date('Y');
                 });
             });
         }
+
+        function resetFilters() {
+            document.getElementById('liveSearch').value = '';
+            document.getElementById('filterKategori').value = '';
+            const subSelect = document.getElementById('filterSubjenis');
+            subSelect.innerHTML = '<option value="">Semua Sub Jenis</option>';
+            document.getElementById('filterStatus').value = '';
+            document.getElementById('filterBulan').value = '<?= $bulan_pilih ?>';
+            document.getElementById('filterTahun').value = '<?= $tahun_pilih ?>';
+            loadTable(1);
+        }
     </script>
+    <script src="../assets/loader.js"></script>
 </body>
 </html>

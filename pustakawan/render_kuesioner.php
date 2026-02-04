@@ -2,6 +2,7 @@
 // web-perpus-v1/pustakawan/render_kuesioner.php
 
 function render_dynamic_form($pdo, $jenis_kuesioner, $library_id, $defaults = []) {
+    require_once __DIR__ . '/../config/public_security.php';
     
     // 1. AMBIL DATA
     $stmt = $pdo->prepare("SELECT * FROM master_pertanyaan WHERE jenis_kuesioner = ? ORDER BY kategori_bagian ASC, urutan ASC");
@@ -15,6 +16,19 @@ function render_dynamic_form($pdo, $jenis_kuesioner, $library_id, $defaults = []
                 <p class="text-muted mb-0">Silakan hubungi administrator.</p>
               </div>';
         return;
+    }
+
+    // --- AUTO-FILL SETTING IPLM (BERDASARKAN ID PERTANYAAN) ---
+    $auto_ids = ['jenis' => null, 'subjenis' => null, 'nama' => null];
+    if ($jenis_kuesioner === 'IPLM') {
+        try {
+            $stmtAuto = $pdo->prepare("SELECT setting_key, setting_value FROM settings WHERE setting_key IN ('iplm_autofill_jenis_id','iplm_autofill_subjenis_id','iplm_autofill_nama_id')");
+            $stmtAuto->execute();
+            $autoRows = $stmtAuto->fetchAll(PDO::FETCH_KEY_PAIR);
+            $auto_ids['jenis'] = !empty($autoRows['iplm_autofill_jenis_id']) ? (int)$autoRows['iplm_autofill_jenis_id'] : null;
+            $auto_ids['subjenis'] = !empty($autoRows['iplm_autofill_subjenis_id']) ? (int)$autoRows['iplm_autofill_subjenis_id'] : null;
+            $auto_ids['nama'] = !empty($autoRows['iplm_autofill_nama_id']) ? (int)$autoRows['iplm_autofill_nama_id'] : null;
+        } catch (Exception $e) {}
     }
 
     // 2. GROUPING
@@ -166,11 +180,19 @@ function render_dynamic_form($pdo, $jenis_kuesioner, $library_id, $defaults = []
             transform: translateY(-2px);
             box-shadow: 0 15px 25px rgba(44, 62, 80, 0.25);
         }
+
+        @media (max-width: 576px) {
+            .section-header { padding: 1rem 1.25rem; }
+            .section-title { font-size: 0.95rem; }
+            .q-item { padding: 1.25rem; }
+            .opt-grid { grid-template-columns: 1fr; }
+        }
     </style>
     ";
 
     // --- FORM START ---
     echo '<form id="formKuesioner" method="POST" action="../proses_simpan.php" class="needs-validation" novalidate>';
+    echo '<input type="hidden" name="csrf_token" value="'.public_csrf_token().'">';
     echo '<input type="hidden" name="jenis_kuesioner" value="'.$jenis_kuesioner.'">';
     echo '<input type="hidden" name="library_id" value="'.$library_id.'">';
 
@@ -194,6 +216,25 @@ function render_dynamic_form($pdo, $jenis_kuesioner, $library_id, $defaults = []
             
             // Auto-fill Logic
             $val = isset($defaults[$label]) ? $defaults[$label] : '';
+            if ($val === '' && $jenis_kuesioner === 'IPLM') {
+                if ($auto_ids['jenis'] && (int)$id === (int)$auto_ids['jenis']) {
+                    $val = $defaults['core_jenis'] ?? '';
+                } elseif ($auto_ids['subjenis'] && (int)$id === (int)$auto_ids['subjenis']) {
+                    $val = $defaults['core_subjenis'] ?? '';
+                } elseif ($auto_ids['nama'] && (int)$id === (int)$auto_ids['nama']) {
+                    $val = $defaults['core_nama'] ?? '';
+                }
+            }
+            if ($val === '' && $jenis_kuesioner === 'IPLM') {
+                $label_raw = strtolower(trim($p['teks_pertanyaan']));
+                if (strpos($label_raw, 'sub jenis') !== false || strpos($label_raw, 'subjenis') !== false) {
+                    $val = $defaults['core_subjenis'] ?? '';
+                } elseif (strpos($label_raw, 'jenis perpustakaan') !== false) {
+                    $val = $defaults['core_jenis'] ?? '';
+                } elseif (strpos($label_raw, 'nama perpustakaan') !== false) {
+                    $val = $defaults['core_nama'] ?? '';
+                }
+            }
             $readonly = ($val !== '') ? 'readonly' : '';
 
             // Parsing Opsi (Jika ada, pisahkan koma)
@@ -240,7 +281,8 @@ function render_dynamic_form($pdo, $jenis_kuesioner, $library_id, $defaults = []
                 $list_opsi = !empty($opsi_custom) ? $opsi_custom : ['Ya', 'Tidak'];
                 
                 foreach ($list_opsi as $opt) {
-                    echo '<option value="'.$opt.'">'.$opt.'</option>';
+                    $opt_safe = htmlspecialchars($opt, ENT_QUOTES);
+                    echo '<option value="'.$opt_safe.'">'.$opt_safe.'</option>';
                 }
                 echo '</select>';
             }
@@ -264,11 +306,14 @@ function render_dynamic_form($pdo, $jenis_kuesioner, $library_id, $defaults = []
 
                 echo '<div class="opt-grid">';
                 foreach ($list_opsi as $val_opt => $label_opt) {
+                    $val_safe = htmlspecialchars((string)$val_opt, ENT_QUOTES);
+                    $label_safe = htmlspecialchars((string)$label_opt, ENT_QUOTES);
+                    $id_safe = preg_replace('/[^a-zA-Z0-9_\-]/', '_', (string)$val_opt);
                     echo '
                     <div>
-                        <input type="radio" class="btn-check" name="jawaban['.$id.']" id="opt_'.$id.'_'.$val_opt.'" value="'.$val_opt.'" required>
-                        <label class="btn-opt" for="opt_'.$id.'_'.$val_opt.'">
-                            '.$label_opt.'
+                        <input type="radio" class="btn-check" name="jawaban['.$id.']" id="opt_'.$id.'_'.$id_safe.'" value="'.$val_safe.'" required>
+                        <label class="btn-opt" for="opt_'.$id.'_'.$id_safe.'">
+                            '.$label_safe.'
                         </label>
                     </div>';
                 }

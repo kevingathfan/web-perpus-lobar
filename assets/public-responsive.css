@@ -1,0 +1,120 @@
+/* public-responsive.css */
+@media (max-width: 992px) {
+  .sidebar {
+    position: static !important;
+    width: 100% !important;
+    min-height: auto !important;
+    padding: 20px 16px !important;
+    border-right: none !important;
+    border-bottom: 1px solid #000 !important;
+  }
+
+  .main-content {
+    margin-left: 0 !important;
+    padding: 20px 16px !important;
+  }
+}
+
+@media (max-width: 992px) {
+  body.sidebar-open {
+    overflow: hidden;
+  }
+
+  .sidebar {
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    height: 100dvh !important;
+    width: 250px !important;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+    z-index: 2000 !important;
+    background: #d9d9d9 !important;
+    overflow-y: auto;
+    padding-bottom: 40px !important;
+  }
+
+  body.sidebar-open .sidebar {
+    transform: translateX(0);
+  }
+
+  .sidebar-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 1500 !important;
+    pointer-events: none;
+  }
+
+  body.sidebar-open .sidebar-backdrop {
+    display: block;
+    pointer-events: auto;
+  }
+}
+
+@media (max-width: 768px) {
+  .header-box {
+    flex-direction: column !important;
+    gap: 12px;
+  }
+
+  .logo-img {
+    height: 90px !important;
+    width: 90px !important;
+  }
+
+  .info-box {
+    padding: 24px !important;
+    margin: 0 16px 24px 16px !important;
+  }
+
+  .card-menu {
+    height: auto !important;
+    min-height: 140px !important;
+  }
+
+  .main-wrapper {
+    padding: 24px 16px !important;
+  }
+
+  .header-text h2 {
+    font-size: 20px !important;
+  }
+
+  .header-text p {
+    font-size: 13px !important;
+  }
+
+  body {
+    font-size: 14px !important;
+  }
+
+  h1 { font-size: 1.4rem !important; }
+  h2 { font-size: 1.25rem !important; }
+  h3 { font-size: 1.15rem !important; }
+  h4 { font-size: 1.05rem !important; }
+  h5 { font-size: 1rem !important; }
+  h6 { font-size: 0.95rem !important; }
+}
+
+@media (max-width: 576px) {
+  .main-content {
+    padding: 16px 12px !important;
+  }
+
+  h3, h4 {
+    font-size: 1.1rem !important;
+  }
+
+  body {
+    font-size: 13px !important;
+  }
+
+  h1 { font-size: 1.3rem !important; }
+  h2 { font-size: 1.15rem !important; }
+  h3 { font-size: 1.05rem !important; }
+  h4 { font-size: 0.98rem !important; }
+  h5 { font-size: 0.95rem !important; }
+  h6 { font-size: 0.9rem !important; }
+}

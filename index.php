@@ -11,6 +11,8 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="assets/loader.css">
+    <link rel="stylesheet" href="assets/public-responsive.css">
 
     <style>
         body {
@@ -119,92 +121,10 @@
         .contact-item { display: flex; align-items: start; gap: 10px; margin-bottom: 15px; }
         .contact-item i { color: #0d6efd; margin-top: 4px; font-size: 1.1rem; }
 
-        /* 1. Latar Belakang Penuh */
-    #global-loader {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: #ffffff; /* Latar Putih Bersih */
-        z-index: 99999; /* Pastikan di paling atas layer */
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: opacity 0.5s ease, visibility 0.5s ease;
-    }
-
-    /* 2. Container Konten */
-    .loader-content {
-        text-align: center;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-    }
-
-    /* 3. Spinner Modern Ganda */
-    .spinner-brand {
-        position: relative;
-        width: 60px;
-        height: 60px;
-        margin-bottom: 15px;
-    }
-
-    .spinner-circle {
-        position: absolute;
-        width: 100%;
-        height: 100%;
-        border: 3px solid #e5e7eb; /* Abu-abu muda */
-        border-top-color: #2c3e50; /* Navy Formal */
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
-    }
-
-    .spinner-circle-inner {
-        position: absolute;
-        top: 15px;
-        left: 15px;
-        width: 30px;
-        height: 30px;
-        border: 3px solid #e5e7eb;
-        border-bottom-color: #34495e; /* Warna Aksen */
-        border-radius: 50%;
-        animation: spin-reverse 1.5s linear infinite;
-    }
-
-    /* 4. Teks Loading Berdenyut */
-    .loading-text {
-        font-family: 'Segoe UI', sans-serif;
-        font-size: 0.85rem;
-        font-weight: 600;
-        letter-spacing: 2px;
-        color: #2c3e50;
-        animation: pulse 1.5s ease-in-out infinite;
-    }
-
-    /* Animasi Keyframes */
-    @keyframes spin { 100% { transform: rotate(360deg); } }
-    @keyframes spin-reverse { 100% { transform: rotate(-360deg); } }
-    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-
-    /* Kelas untuk Menyembunyikan Loader */
-    .loader-hidden {
-        opacity: 0;
-        visibility: hidden;
-    }
-
     </style>
 </head>
 <body>
-    <div id="global-loader">
-        <div class="loader-content">
-            <div class="spinner-brand">
-                <div class="spinner-circle"></div>
-                <div class="spinner-circle-inner"></div>
-            </div>
-            <div class="loading-text">MEMUAT...</div>
-        </div>
-    </div>
+    <?php include __DIR__ . '/config/loader.php'; ?>
     <div class="main-wrapper">
         <div class="header-box">
             <img src="assets/logo_lobar.png" alt="Logo" class="logo-img">
@@ -316,24 +236,7 @@
             </div>
         </div>
     </footer>
-    <script>
-    // Hilangkan Preloader saat halaman selesai dimuat sepenuhnya
-    window.addEventListener("load", function () {
-        const loader = document.getElementById("global-loader");
-        
-        // Beri sedikit jeda agar animasi terlihat (opsional, bisa dihapus)
-        setTimeout(function() {
-            loader.classList.add("loader-hidden");
-            
-            // Hapus elemen dari DOM setelah transisi selesai agar tidak menghalangi klik
-            loader.addEventListener("transitionend", function() {
-                if (loader.parentNode) {
-                    loader.parentNode.removeChild(loader);
-                }
-            });
-        }, 500); // Durasi tampil minimal 0.5 detik
-    });
-</script>
+    <script src="assets/loader.js"></script>
 
 </body>
 </html>

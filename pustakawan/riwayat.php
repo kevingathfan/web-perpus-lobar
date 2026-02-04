@@ -10,8 +10,12 @@ $library_id = isset($_GET['library_id']) ? $_GET['library_id'] : '';
 <html lang="id">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Riwayat Laporan</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="../assets/loader.css">
+    <link rel="stylesheet" href="../assets/public-responsive.css">
     <style>
         body { background-color: #ffffff; font-family: sans-serif; }
         .sidebar { width: 250px; background-color: #d9d9d9; min-height: 100vh; border-right: 1px solid #000; padding: 30px; position: fixed; top: 0; left: 0; }
@@ -25,9 +29,14 @@ $library_id = isset($_GET['library_id']) ? $_GET['library_id'] : '';
     </style>
 </head>
 <body>
+    <?php include __DIR__ . '/../config/loader.php'; ?>
+    <div class="sidebar-backdrop" onclick="toggleSidebar(false)"></div>
 
     <nav class="sidebar">
-        <h2>Logo</h2>
+        <div class="d-flex justify-content-between align-items-center">
+            <h2 class="m-0">Logo</h2>
+            <button class="btn btn-sm btn-outline-dark d-lg-none" onclick="toggleSidebar(false)"><i class="bi bi-x-lg"></i></button>
+        </div>
         <a href="dashboard.php?library_id=<?= $library_id ?>" class="nav-link">Beranda</a>
         <a href="kuisioner_iplm.php?library_id=<?= $library_id ?>" class="nav-link">Kuisioner IPLM</a>
         <a href="kuisioner_tkm.php?library_id=<?= $library_id ?>" class="nav-link">Kuisioner TKM</a>
@@ -35,10 +44,14 @@ $library_id = isset($_GET['library_id']) ? $_GET['library_id'] : '';
     </nav>
 
     <main class="main-content">
-        <h3 class="mb-4">Riwayat Laporan</h3>
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <button class="btn btn-dark btn-sm d-lg-none" onclick="toggleSidebar(true)"><i class="bi bi-list"></i></button>
+            <h3 class="mb-0">Riwayat Laporan</h3>
+        </div>
 
         <div class="p-4" style="background-color: #d9d9d9; border: 1px solid #000; border-radius: 10px;">
-            <table class="table-custom">
+            <div class="table-responsive">
+                <table class="table-custom">
                 <thead>
                     <tr>
                         <th>Periode</th>
@@ -64,9 +77,19 @@ $library_id = isset($_GET['library_id']) ? $_GET['library_id'] : '';
                         <td><a href="kuisioner_tkm.php?library_id=<?= $library_id ?>" class="btn btn-sm btn-dark">Isi Sekarang</a></td>
                     </tr>
                 </tbody>
-            </table>
+                </table>
+            </div>
         </div>
     </main>
 
+    <script src="../assets/loader.js"></script>
+    <script>
+        function toggleSidebar(open) {
+            document.body.classList.toggle('sidebar-open', open);
+        }
+        document.querySelectorAll('.sidebar .nav-link').forEach((link) => {
+            link.addEventListener('click', () => toggleSidebar(false));
+        });
+    </script>
 </body>
 </html>

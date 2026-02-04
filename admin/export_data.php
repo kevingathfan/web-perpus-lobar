@@ -2,6 +2,7 @@
 // web-perpus-v1/admin/eksport_data.php
 session_start();
 require '../config/database.php';
+require '../config/admin_auth.php';
 
 // Load Library PhpSpreadsheet
 require '../vendor/autoload.php'; 

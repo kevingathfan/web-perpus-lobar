@@ -7,20 +7,67 @@ $error = '';
 
 // --- LOGIKA LOGIN SEDERHANA ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $max_attempts = 5;
+    $lock_minutes = 5;
+    $now = time();
+
+    if (!isset($_SESSION['login_attempts'])) $_SESSION['login_attempts'] = 0;
+    if (!isset($_SESSION['login_lock_until'])) $_SESSION['login_lock_until'] = 0;
+
+    $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+    $ip_key = hash('sha256', $ip);
+    $rate_file = rtrim(sys_get_temp_dir(), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'login_rate_' . $ip_key . '.json';
+    $rate_data = ['attempts' => 0, 'lock_until' => 0];
+    if (is_file($rate_file)) {
+        $raw = @file_get_contents($rate_file);
+        $decoded = json_decode($raw, true);
+        if (is_array($decoded)) $rate_data = array_merge($rate_data, $decoded);
+    }
+
+    $session_locked = $now < (int)$_SESSION['login_lock_until'];
+    $ip_locked = $now < (int)$rate_data['lock_until'];
+
+    if ($session_locked || $ip_locked) {
+        $lock_until = max((int)$_SESSION['login_lock_until'], (int)$rate_data['lock_until']);
+        $sisa = $lock_until - $now;
+        $error = "Terlalu banyak percobaan. Coba lagi dalam " . ceil($sisa / 60) . " menit.";
+    } else {
     $username = $_POST['username'] ?? '';
     $password = $_POST['password'] ?? '';
 
-    // CONTOH VERIFIKASI (Bisa diganti dengan cek Database)
-    // Username: admin, Password: admin123
-    if ($username === 'admin' && $password === 'admin123') {
+    // Verifikasi dari tabel users (login via nama)
+    $stmt = $pdo->prepare("SELECT id, nama, password FROM users WHERE nama = ? LIMIT 1");
+    $stmt->execute([$username]);
+    $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if ($user && password_verify($password, $user['password'])) {
+        session_regenerate_id(true);
         $_SESSION['admin_logged_in'] = true;
-        $_SESSION['admin_name'] = 'Super Administrator';
+        $_SESSION['admin_name'] = $user['nama'];
+        $_SESSION['login_attempts'] = 0;
+        $_SESSION['login_lock_until'] = 0;
+        $rate_data['attempts'] = 0;
+        $rate_data['lock_until'] = 0;
+        @file_put_contents($rate_file, json_encode($rate_data));
         
         // Arahkan ke dashboard admin (Buat file dashboard.php nanti)
         header('Location: dashboard.php'); 
         exit;
     } else {
-        $error = 'Username atau Password salah!';
+        $_SESSION['login_attempts']++;
+        $rate_data['attempts']++;
+        if ($_SESSION['login_attempts'] >= $max_attempts) {
+            $_SESSION['login_lock_until'] = $now + ($lock_minutes * 60);
+            $error = "Terlalu banyak percobaan. Coba lagi dalam $lock_minutes menit.";
+        } else {
+            $sisa = $max_attempts - $_SESSION['login_attempts'];
+            $error = "Username atau Password salah! Sisa percobaan: $sisa";
+        }
+        if ($rate_data['attempts'] >= $max_attempts) {
+            $rate_data['lock_until'] = $now + ($lock_minutes * 60);
+        }
+        @file_put_contents($rate_file, json_encode($rate_data));
+    }
     }
 }
 ?>
@@ -33,6 +80,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../assets/loader.css">
     
     <style>
         body {
@@ -133,6 +181,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </style>
 </head>
 <body>
+    <?php include __DIR__ . '/../config/loader.php'; ?>
 
     <div class="login-card">
         <div class="card-header-custom">
@@ -154,8 +203,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             <form method="POST">
                 <div class="mb-3">
-                    <label class="form-label">Username</label>
-                    <input type="text" name="username" class="form-control" placeholder="Masukkan username..." required autofocus>
+                    <label class="form-label">Nama</label>
+                    <input type="text" name="username" class="form-control" placeholder="Masukkan nama..." required autofocus>
                 </div>
 
                 <div class="mb-3">
@@ -165,10 +214,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 <button type="submit" class="btn-login">MASUK DASHBOARD</button>
 
+                <a href="forgot_password.php" class="back-link">Lupa Password?</a>
                 <a href="../index.php" class="back-link">&larr; Kembali ke Halaman Depan</a>
             </form>
         </div>
     </div>
 
+    <script src="../assets/loader.js"></script>
 </body>
 </html>
