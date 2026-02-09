@@ -8,13 +8,56 @@ date_default_timezone_set('Asia/Makassar');
 
 $list_bulan = ['01'=>'Januari','02'=>'Februari','03'=>'Maret','04'=>'April','05'=>'Mei','06'=>'Juni','07'=>'Juli','08'=>'Agustus','09'=>'September','10'=>'Oktober','11'=>'November','12'=>'Desember'];
 
-$jenis = isset($_GET['jenis']) ? strtolower($_GET['jenis']) : 'iplm';
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['aksi'] ?? '') === 'hapus_header') {
+    $headerId = (int)($_POST['header_id'] ?? 0);
+    if ($headerId > 0) {
+        $pdo->beginTransaction();
+        try {
+            $stmtDelDetail = $pdo->prepare("DELETE FROM trans_detail WHERE header_id = ?");
+            $stmtDelDetail->execute([$headerId]);
+            $stmtDelHeader = $pdo->prepare("DELETE FROM trans_header WHERE id = ?");
+            $stmtDelHeader->execute([$headerId]);
+            $pdo->commit();
+        } catch (Exception $e) {
+            $pdo->rollBack();
+        }
+    }
+    header("Location: hasil_kuisioner.php");
+    exit;
+}
+
+$filter_keys = ['jenis','start_bulan','start_tahun','end_bulan','end_tahun'];
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['aksi'] ?? '') !== 'hapus_header') {
+    $session_filter = [];
+    foreach ($filter_keys as $k) {
+        if (isset($_POST[$k])) $session_filter[$k] = $_POST[$k];
+    }
+    $_SESSION['hasil_kuisioner_filter'] = $session_filter;
+    header("Location: hasil_kuisioner.php");
+    exit;
+}
+
+if (!empty($_GET)) {
+    $session_filter = [];
+    foreach ($filter_keys as $k) {
+        if (isset($_GET[$k])) $session_filter[$k] = $_GET[$k];
+    }
+    if (!empty($session_filter)) {
+        $_SESSION['hasil_kuisioner_filter'] = $session_filter;
+        header("Location: hasil_kuisioner.php");
+        exit;
+    }
+}
+
+$filter = $_SESSION['hasil_kuisioner_filter'] ?? [];
+
+$jenis = isset($filter['jenis']) ? strtolower($filter['jenis']) : 'iplm';
 if (!in_array($jenis, ['iplm', 'tkm'])) $jenis = 'iplm';
 
-$start_bln = isset($_GET['start_bulan']) ? str_pad($_GET['start_bulan'], 2, '0', STR_PAD_LEFT) : '01';
-$start_thn = isset($_GET['start_tahun']) ? (int)$_GET['start_tahun'] : (int)date('Y');
-$end_bln   = isset($_GET['end_bulan']) ? str_pad($_GET['end_bulan'], 2, '0', STR_PAD_LEFT) : date('m');
-$end_thn   = isset($_GET['end_tahun']) ? (int)$_GET['end_tahun'] : (int)date('Y');
+$start_bln = isset($filter['start_bulan']) ? str_pad($filter['start_bulan'], 2, '0', STR_PAD_LEFT) : '01';
+$start_thn = isset($filter['start_tahun']) ? (int)$filter['start_tahun'] : (int)date('Y');
+$end_bln   = isset($filter['end_bulan']) ? str_pad($filter['end_bulan'], 2, '0', STR_PAD_LEFT) : date('m');
+$end_thn   = isset($filter['end_tahun']) ? (int)$filter['end_tahun'] : (int)date('Y');
 
 $start_key = sprintf('%04d-%02d', $start_thn, (int)$start_bln);
 $end_key   = sprintf('%04d-%02d', $end_thn, (int)$end_bln);
@@ -42,7 +85,7 @@ $sql = "SELECT h.id as header_id, h.periode_bulan, h.periode_tahun,
         WHERE h.jenis_kuesioner = :jenis
         AND (CAST(CONCAT(h.periode_tahun, h.periode_bulan) AS INTEGER) >= :start_p)
         AND (CAST(CONCAT(h.periode_tahun, h.periode_bulan) AS INTEGER) <= :end_p)
-        ORDER BY h.periode_tahun DESC, h.periode_bulan DESC, h.id DESC";
+        ORDER BY h.id ASC";
 $stmtData = $pdo->prepare($sql);
 $stmtData->execute([
     ':jenis'   => $jenis_upper,
@@ -96,6 +139,14 @@ $periode_label = ($start_key === $end_key)
         .card-clean { background-color: #ffffff; border: 1px solid #e0e0e0; border-radius: 16px; padding: 25px; box-shadow: 0 5px 20px rgba(0,0,0,0.03); }
         .table thead th { white-space: nowrap; }
         .table td { vertical-align: middle; }
+        .table-responsive { max-height: 70vh; overflow: auto; }
+        .table-sm td, .table-sm th { font-size: 12px; }
+        .cell-wrap { white-space: normal; word-break: break-word; min-width: 180px; max-width: 260px; }
+        .cell-wide { min-width: 220px; }
+        .sticky-head th { position: sticky; top: 0; z-index: 7; background: #f8f9fa; }
+        .sticky-col { position: sticky; z-index: 6; background: #fff; }
+        .sticky-col-name { left: 0; min-width: 240px; max-width: 320px; box-shadow: 8px 0 8px -8px rgba(0,0,0,0.2); }
+        .sticky-right { position: sticky; right: 0; z-index: 8; background: #fff; box-shadow: -8px 0 8px -8px rgba(0,0,0,0.2); }
         .pill { display: inline-block; padding: 4px 10px; border-radius: 999px; font-size: 12px; background: #f1f3f5; color: #555; }
     </style>
 </head>
@@ -134,7 +185,8 @@ $periode_label = ($start_key === $end_key)
         </div>
 
         <div class="card-clean mb-4">
-            <form method="GET" class="row g-3 align-items-end">
+            <form method="POST" class="row g-3 align-items-end">
+                <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
                 <div class="col-lg-3">
                     <label class="form-label fw-bold">Jenis Kuisioner</label>
                     <select name="jenis" class="form-select">
@@ -185,39 +237,42 @@ $periode_label = ($start_key === $end_key)
                 </div>
             </form>
             <div class="d-flex justify-content-end mt-3">
-                <a class="btn btn-success fw-bold rounded-pill px-4" target="_blank" href="export_data.php?<?= http_build_query([
-                    'jenis' => $jenis,
-                    'start_bulan' => $start_bln,
-                    'start_tahun' => $start_thn,
-                    'end_bulan' => $end_bln,
-                    'end_tahun' => $end_thn
-                ]) ?>">
-                    <i class="bi bi-file-earmark-spreadsheet-fill me-1"></i> Export Excel
-                </a>
+                <form method="POST" action="export_data.php" target="_blank">
+                    <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
+                    <input type="hidden" name="jenis" value="<?= htmlspecialchars($jenis) ?>">
+                    <input type="hidden" name="start_bulan" value="<?= htmlspecialchars($start_bln) ?>">
+                    <input type="hidden" name="start_tahun" value="<?= htmlspecialchars($start_thn) ?>">
+                    <input type="hidden" name="end_bulan" value="<?= htmlspecialchars($end_bln) ?>">
+                    <input type="hidden" name="end_tahun" value="<?= htmlspecialchars($end_thn) ?>">
+                    <button type="submit" class="btn btn-success fw-bold rounded-pill px-4">
+                        <i class="bi bi-file-earmark-spreadsheet-fill me-1"></i> Export Excel
+                    </button>
+                </form>
             </div>
         </div>
 
         <div class="card-clean">
             <div class="table-responsive">
-                <table class="table table-bordered table-hover align-middle">
-                    <thead class="table-light">
+                <table class="table table-bordered table-hover align-middle table-sm">
+                    <thead class="table-light sticky-head">
                         <tr>
                             <th>No</th>
                             <th>Periode</th>
                             <?php if ($jenis === 'iplm'): ?>
-                                <th>Nama Perpustakaan</th>
+                                <th class="sticky-col sticky-col-name cell-wide">Nama Perpustakaan</th>
                                 <th>Kategori</th>
                                 <th>Jenis</th>
                             <?php endif; ?>
                             <?php foreach ($daftar_soal as $s): ?>
-                                <th><?= htmlspecialchars($s['teks_pertanyaan']) ?></th>
+                                <th class="cell-wrap"><?= htmlspecialchars($s['teks_pertanyaan']) ?></th>
                             <?php endforeach; ?>
+                            <th class="sticky-right" style="min-width:70px;">Aksi</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php if (empty($responden)): ?>
                             <tr>
-                                <td colspan="<?= ($jenis === 'iplm' ? 5 : 2) + count($daftar_soal) ?>" class="text-center text-muted py-4">
+                                <td colspan="<?= ($jenis === 'iplm' ? 6 : 3) + count($daftar_soal) ?>" class="text-center text-muted py-4">
                                     Belum ada data pada periode ini.
                                 </td>
                             </tr>
@@ -227,7 +282,7 @@ $periode_label = ($start_key === $end_key)
                                     <td><?= $no++ ?></td>
                                     <td><?= htmlspecialchars($row['periode_bulan'] . '/' . $row['periode_tahun']) ?></td>
                                     <?php if ($jenis === 'iplm'): ?>
-                                        <td><?= htmlspecialchars($row['nama_perpus'] ?? '-') ?></td>
+                                        <td class="sticky-col sticky-col-name cell-wide"><?= htmlspecialchars($row['nama_perpus'] ?? '-') ?></td>
                                         <td><?= htmlspecialchars($row['kategori'] ?? '-') ?></td>
                                         <td><?= htmlspecialchars($row['jenis_perpus'] ?? '-') ?></td>
                                     <?php endif; ?>
@@ -236,8 +291,18 @@ $periode_label = ($start_key === $end_key)
                                             $val = $jawaban_map[$row['header_id']][$s['id']] ?? '-';
                                             if ($s['tipe_input'] === 'likert' && isset($likert_map[$val])) $val = $likert_map[$val];
                                         ?>
-                                        <td><?= htmlspecialchars((string)$val) ?></td>
+                                        <td class="cell-wrap"><?= htmlspecialchars((string)$val) ?></td>
                                     <?php endforeach; ?>
+                                    <td class="sticky-right text-center">
+                                        <form method="POST" class="d-inline js-confirm" data-confirm-title="Hapus data?" data-confirm-text="Data kuisioner pada periode ini akan dihapus permanen." data-confirm-button="Ya, hapus">
+                                            <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
+                                            <input type="hidden" name="aksi" value="hapus_header">
+                                            <input type="hidden" name="header_id" value="<?= (int)$row['header_id'] ?>">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                    </td>
                                 </tr>
                             <?php endforeach; ?>
                         <?php endif; ?>
@@ -247,8 +312,37 @@ $periode_label = ($start_key === $end_key)
         </div>
     </main>
 
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        function bindConfirmForms(root = document) {
+            root.querySelectorAll('form.js-confirm').forEach((form) => {
+                if (form.dataset.confirmBound === '1') return;
+                form.dataset.confirmBound = '1';
+                form.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    const title = form.dataset.confirmTitle || 'Yakin?';
+                    const text = form.dataset.confirmText || 'Tindakan ini tidak dapat dibatalkan.';
+                    const confirmButton = form.dataset.confirmButton || 'Ya, lanjutkan';
+                    if (window.Swal) {
+                        Swal.fire({
+                            title,
+                            text,
+                            icon: 'warning',
+                            showCancelButton: true,
+                            confirmButtonText: confirmButton,
+                            cancelButtonText: 'Batal',
+                            reverseButtons: true
+                        }).then((result) => {
+                            if (result.isConfirmed) form.submit();
+                        });
+                    } else if (confirm(text)) {
+                        form.submit();
+                    }
+                });
+            });
+        }
+
         function toggleSidebar(open) {
             document.body.classList.toggle('sidebar-open', open);
         }
@@ -256,6 +350,8 @@ $periode_label = ($start_key === $end_key)
         document.querySelectorAll('.sidebar .nav-link').forEach((link) => {
             link.addEventListener('click', () => toggleSidebar(false));
         });
+
+        bindConfirmForms();
     </script>
     <script src="../assets/loader.js"></script>
 </body>

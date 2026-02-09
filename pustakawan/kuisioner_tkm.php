@@ -1,5 +1,6 @@
 <?php
 // web-perpus-v1/pustakawan/kuisioner_tkm.php
+session_start();
 require '../config/database.php';
 
 // --- CEK STATUS & JADWAL ---
@@ -64,8 +65,19 @@ if (!$isOpen) {
 // JIKA DIBUKA
 require 'render_kuesioner.php';
 
-// (TKM biasanya tidak butuh data perpustakaan spesifik, jadi null)
-$library_id = isset($_GET['library_id']) ? $_GET['library_id'] : '';
+if (!empty($_POST) || !empty($_GET)) {
+    $incoming = $_POST['library_id'] ?? ($_GET['library_id'] ?? null);
+    if ($incoming !== null && $incoming !== '') {
+        $_SESSION['pustakawan_ctx']['library_id'] = $incoming;
+    }
+    if (!empty($_GET)) {
+        header("Location: kuisioner_tkm.php");
+        exit;
+    }
+}
+
+// (TKM biasanya tidak butuh data perpustakaan spesifik, jadi boleh kosong)
+$library_id = $_SESSION['pustakawan_ctx']['library_id'] ?? '';
 
 // Data Auto Fill untuk TKM (Biasanya kosong/bebas)
 $auto_isi = []; 

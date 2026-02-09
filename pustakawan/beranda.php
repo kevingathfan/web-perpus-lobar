@@ -1,9 +1,16 @@
 <?php
 // web-perpus-v1/pustakawan/beranda.php
+session_start();
 require '../config/database.php';
 
-// 1. Ambil ID Perpustakaan dari URL
-$library_id = isset($_GET['library_id']) ? $_GET['library_id'] : '';
+// 1. Ambil ID Perpustakaan dari URL (jika ada), lalu simpan ke session
+if (!empty($_GET['library_id'])) {
+    $_SESSION['pustakawan_ctx']['library_id'] = $_GET['library_id'];
+    header("Location: beranda.php");
+    exit;
+}
+
+$library_id = $_SESSION['pustakawan_ctx']['library_id'] ?? '';
 
 // Jika tidak ada ID, kembalikan ke halaman pilih
 if (!$library_id) {
@@ -175,13 +182,13 @@ $library = $stmt->fetch();
     <div class="container" style="max-width: 900px;">
         <div class="row g-4">
             <div class="col-md-6">
-                <a href="kuisioner_iplm.php?library_id=<?= $library_id ?>" class="card-menu">
+                <a href="kuisioner_iplm.php" class="card-menu">
                     <h3>Kuisioner Pengukuran<br>Indeks Pembangunan<br>Literasi Masyarakat<br>(IPLM)</h3>
                 </a>
             </div>
 
             <div class="col-md-6">
-                <a href="kuisioner_tkm.php?library_id=<?= $library_id ?>" class="card-menu">
+                <a href="kuisioner_tkm.php" class="card-menu">
                     <h3>Kuisioner<br>Tingkat Kegemaran<br>Membaca (TKM)</h3>
                 </a>
             </div>
@@ -197,7 +204,7 @@ $library = $stmt->fetch();
     </div>
 
     <div class="mt-4">
-        <a href="dashboard.php?library_id=<?= $library_id ?>" class="text-decoration-none text-muted small">
+        <a href="dashboard.php" class="text-decoration-none text-muted small">
             &larr; Kembali ke Dashboard Statistik
         </a>
     </div>

@@ -27,6 +27,25 @@ function isKategoriValid($kategori, $subjenis, $map) {
     return isset($map[$k]) && in_array($s, $map[$k]);
 }
 
+if (!isset($_GET['ajax_action'])) {
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['filter_periode'])) {
+        $_SESSION['perpustakaan_filter'] = [
+            'bulan' => $_POST['bulan'] ?? date('m'),
+            'tahun' => $_POST['tahun'] ?? date('Y')
+        ];
+        header("Location: perpustakaan.php");
+        exit;
+    }
+    if (!empty($_GET) && (isset($_GET['bulan']) || isset($_GET['tahun']))) {
+        $_SESSION['perpustakaan_filter'] = [
+            'bulan' => $_GET['bulan'] ?? date('m'),
+            'tahun' => $_GET['tahun'] ?? date('Y')
+        ];
+        header("Location: perpustakaan.php");
+        exit;
+    }
+}
+
 // --- 1. HANDLE REQUEST AJAX (LIVE SEARCH & STATUS IPLM) ---
 if (isset($_GET['ajax_action']) && $_GET['ajax_action'] == 'load_table') {
     
@@ -125,8 +144,16 @@ if (isset($_GET['ajax_action']) && $_GET['ajax_action'] == 'load_table') {
             echo '<td><span class="badge ' . $bg . ' badge-kategori">' . htmlspecialchars($kat) . '</span></td>';
             echo '<td>' . htmlspecialchars($lib['jenis']) . '</td>';
             
-            // Kolom Status IPLM
-            echo '<td class="text-center">' . $badgeIplm . '</td>';
+            // Kolom Status IPLM (klik untuk pengaturan)
+            $statusText = ($lib['status_iplm'] > 0) ? 'sudah' : 'belum';
+            echo '<td class="text-center">
+                    <button type="button" class="btn btn-link p-0 text-decoration-none btn-status-iplm"
+                        data-id="' . $lib['id'] . '"
+                        data-status="' . $statusText . '"
+                        data-nama="' . htmlspecialchars($lib['nama']) . '">
+                        ' . $badgeIplm . '
+                    </button>
+                  </td>';
 
             echo '<td class="text-center">
                     <div class="btn-group btn-group-sm">
@@ -175,6 +202,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt->execute([$_POST['id']]);
                 $pesan = "Perpustakaan dihapus.";
             } 
+            elseif ($_POST['aksi'] == 'reset_status') {
+                $libraryId = (int)($_POST['library_id'] ?? 0);
+                $jenis = strtoupper(trim($_POST['jenis'] ?? ''));
+                $bulan = str_pad((string)($_POST['bulan'] ?? ''), 2, '0', STR_PAD_LEFT);
+                $tahun = (int)($_POST['tahun'] ?? 0);
+
+                if (!$libraryId || !in_array($jenis, ['IPLM', 'TKM'], true) || !$bulan || !$tahun) {
+                    throw new Exception("Parameter reset status tidak valid.");
+                }
+
+                $pdo->beginTransaction();
+                try {
+                    $stmtHeader = $pdo->prepare("SELECT id FROM trans_header WHERE library_id = ? AND jenis_kuesioner = ? AND periode_bulan = ? AND periode_tahun = ?");
+                    $stmtHeader->execute([$libraryId, $jenis, $bulan, $tahun]);
+                    $headerIds = $stmtHeader->fetchAll(PDO::FETCH_COLUMN);
+
+                    if (!empty($headerIds)) {
+                        $inQuery = implode(',', array_fill(0, count($headerIds), '?'));
+                        $stmtDelDetail = $pdo->prepare("DELETE FROM trans_detail WHERE header_id IN ($inQuery)");
+                        $stmtDelDetail->execute($headerIds);
+                        $stmtDelHeader = $pdo->prepare("DELETE FROM trans_header WHERE id IN ($inQuery)");
+                        $stmtDelHeader->execute($headerIds);
+                    }
+                    $pdo->commit();
+                } catch (Exception $e) {
+                    $pdo->rollBack();
+                    throw $e;
+                }
+                $pesan = "Status perpustakaan berhasil direset menjadi belum mengisi.";
+            }
             elseif ($_POST['aksi'] == 'import_csv') {
                 if (isset($_FILES['file_csv']) && $_FILES['file_csv']['error'] == 0) {
                     $file = $_FILES['file_csv']['tmp_name'];
@@ -269,8 +326,9 @@ $bulanList = [
 $tahunIni = date('Y');
 
 // --- RINCIAN STATISTIK DATA (BULANAN) ---
-$bulan_pilih = isset($_GET['bulan']) ? $_GET['bulan'] : date('m');
-$tahun_pilih = isset($_GET['tahun']) ? $_GET['tahun'] : date('Y');
+$perpus_filter = $_SESSION['perpustakaan_filter'] ?? [];
+$bulan_pilih = $perpus_filter['bulan'] ?? date('m');
+$tahun_pilih = $perpus_filter['tahun'] ?? date('Y');
 $label_periode = $bulanList[$bulan_pilih] . " " . $tahun_pilih;
 
 try { 
@@ -562,7 +620,7 @@ $belum_iplm = max(0, $total_perpus - $total_iplm);
                                             <td><span class="badge bg-secondary"><?= htmlspecialchars($row['kategori']) ?></span></td>
                                             <td><?= htmlspecialchars($row['sub_kategori']) ?></td>
                                             <td class="text-center">
-                                                <form method="POST" onsubmit="return confirm('Hapus jenis ini?')" style="display:inline;">
+                                                <form method="POST" class="js-confirm" data-confirm-title="Hapus jenis?" data-confirm-text="Jenis ini akan dihapus permanen." data-confirm-button="Ya, hapus" style="display:inline;">
                                                     <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
                                                     <input type="hidden" name="form_type" value="category">
                                                     <input type="hidden" name="aksi" value="hapus">
@@ -588,7 +646,8 @@ $belum_iplm = max(0, $total_perpus - $total_iplm);
             <div class="modal-content rounded-4 border-0 p-3">
                 <div class="modal-header border-0"><h5 class="modal-title fw-bold">Pilih Periode</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
                 <div class="modal-body">
-                    <form action="" method="GET">
+                    <form action="" method="POST">
+                        <input type="hidden" name="filter_periode" value="1">
                         <div class="mb-3">
                             <label class="form-label small fw-bold text-muted">BULAN</label>
                             <select name="bulan" class="form-select border-secondary">
@@ -681,8 +740,79 @@ $belum_iplm = max(0, $total_perpus - $total_iplm);
         <input type="hidden" name="id" id="hapusId">
     </form>
 
+    <form id="formResetStatus" method="POST" style="display:none;">
+        <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
+        <input type="hidden" name="form_type" value="library">
+        <input type="hidden" name="aksi" value="reset_status">
+        <input type="hidden" name="library_id" id="resetLibraryId">
+        <input type="hidden" name="jenis" value="IPLM">
+        <input type="hidden" name="bulan" value="<?= $bulan_pilih ?>">
+        <input type="hidden" name="tahun" value="<?= $tahun_pilih ?>">
+    </form>
+
+    <div class="modal fade" id="modalStatusIplm" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-4 border-0">
+                <div class="modal-header bg-dark text-white">
+                    <h5 class="modal-title fw-bold">Pengaturan Status IPLM</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="mb-2 fw-bold" id="statusLibName"></div>
+                    <div class="small text-muted mb-3">Periode: <?= $label_periode ?></div>
+
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="radio" name="status_iplm" id="statusSudah" value="sudah" disabled>
+                        <label class="form-check-label" for="statusSudah">Sudah Mengisi</label>
+                    </div>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="radio" name="status_iplm" id="statusBelum" value="belum">
+                        <label class="form-check-label" for="statusBelum">Belum Mengisi</label>
+                    </div>
+
+                    <div class="alert alert-warning small mb-0" id="statusWarning">
+                        Mengubah ke "Belum Mengisi" akan menghapus data jawaban pada periode ini.
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-dark fw-bold" id="btnSimpanStatus" disabled>Simpan</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        function bindConfirmForms(root = document) {
+            root.querySelectorAll('form.js-confirm').forEach((form) => {
+                if (form.dataset.confirmBound === '1') return;
+                form.dataset.confirmBound = '1';
+                form.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    const title = form.dataset.confirmTitle || 'Yakin?';
+                    const text = form.dataset.confirmText || 'Tindakan ini tidak dapat dibatalkan.';
+                    const confirmButton = form.dataset.confirmButton || 'Ya, lanjutkan';
+                    if (window.Swal) {
+                        Swal.fire({
+                            title,
+                            text,
+                            icon: 'warning',
+                            showCancelButton: true,
+                            confirmButtonText: confirmButton,
+                            cancelButtonText: 'Batal',
+                            reverseButtons: true
+                        }).then((result) => {
+                            if (result.isConfirmed) form.submit();
+                        });
+                    } else if (confirm(text)) {
+                        form.submit();
+                    }
+                });
+            });
+        }
+
         function toggleSidebar(open) {
             document.body.classList.toggle('sidebar-open', open);
         }
@@ -693,6 +823,7 @@ $belum_iplm = max(0, $total_perpus - $total_iplm);
 
         const subJenisData = <?= json_encode($strukturJenis) ?>;
         const modalLib = new bootstrap.Modal(document.getElementById('modalLib'));
+        const modalStatusIplm = new bootstrap.Modal(document.getElementById('modalStatusIplm'));
         let debounceTimer;
         
         function loadTable(page = 1) {
@@ -712,7 +843,9 @@ $belum_iplm = max(0, $total_perpus - $total_iplm);
                 .then(response => response.text())
                 .then(html => {
                     tbody.innerHTML = html;
-                    attachEditDeleteEvents(); 
+                    attachEditDeleteEvents();
+                    bindConfirmForms(tbody);
+                    bindStatusEvents(tbody);
                 });
         }
 
@@ -786,13 +919,81 @@ $belum_iplm = max(0, $total_perpus - $total_iplm);
             });
             document.querySelectorAll('.btn-hapus-lib').forEach(btn => {
                 btn.addEventListener('click', function() {
-                    if(confirm('Yakin ingin menghapus perpustakaan ini?')) {
-                        document.getElementById('hapusId').value = this.getAttribute('data-id');
+                    const id = this.getAttribute('data-id');
+                    const doSubmit = () => {
+                        document.getElementById('hapusId').value = id;
                         document.getElementById('formHapus').submit();
+                    };
+                    if (window.Swal) {
+                        Swal.fire({
+                            title: 'Hapus perpustakaan?',
+                            text: 'Data perpustakaan akan dihapus permanen.',
+                            icon: 'warning',
+                            showCancelButton: true,
+                            confirmButtonText: 'Ya, hapus',
+                            cancelButtonText: 'Batal',
+                            reverseButtons: true
+                        }).then((result) => {
+                            if (result.isConfirmed) doSubmit();
+                        });
+                    } else if (confirm('Yakin ingin menghapus perpustakaan ini?')) {
+                        doSubmit();
                     }
                 });
             });
         }
+
+        function bindStatusEvents(root = document) {
+            root.querySelectorAll('.btn-status-iplm').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const id = this.getAttribute('data-id');
+                    const status = this.getAttribute('data-status');
+                    const nama = this.getAttribute('data-nama');
+
+                    document.getElementById('statusLibName').innerText = nama || '-';
+                    document.getElementById('resetLibraryId').value = id;
+
+                    const radioSudah = document.getElementById('statusSudah');
+                    const radioBelum = document.getElementById('statusBelum');
+                    const btnSimpan = document.getElementById('btnSimpanStatus');
+
+                    if (status === 'sudah') {
+                        radioSudah.checked = true;
+                        radioBelum.checked = false;
+                        btnSimpan.disabled = false;
+                    } else {
+                        radioSudah.checked = false;
+                        radioBelum.checked = true;
+                        btnSimpan.disabled = true;
+                    }
+
+                    modalStatusIplm.show();
+                });
+            });
+        }
+
+        document.getElementById('btnSimpanStatus').addEventListener('click', () => {
+            const radioBelum = document.getElementById('statusBelum');
+            if (radioBelum.checked) {
+                if (window.Swal) {
+                    Swal.fire({
+                        title: 'Reset status?',
+                        text: 'Data jawaban pada periode ini akan dihapus permanen.',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonText: 'Ya, reset',
+                        cancelButtonText: 'Batal',
+                        reverseButtons: true
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            document.getElementById('formResetStatus').submit();
+                        }
+                    });
+                } else {
+                    document.getElementById('formResetStatus').submit();
+                }
+            }
+        });
 
         function resetFilters() {
             document.getElementById('liveSearch').value = '';
@@ -804,6 +1005,9 @@ $belum_iplm = max(0, $total_perpus - $total_iplm);
             document.getElementById('filterTahun').value = '<?= $tahun_pilih ?>';
             loadTable(1);
         }
+
+        bindConfirmForms();
+        bindStatusEvents();
     </script>
     <script src="../assets/loader.js"></script>
 </body>

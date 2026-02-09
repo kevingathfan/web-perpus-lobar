@@ -20,20 +20,43 @@ if (isset($_POST['aksi']) && $_POST['aksi'] == 'hapus') {
 if (isset($_POST['aksi']) && $_POST['aksi'] == 'toggle_important') {
     $stmt = $pdo->prepare("UPDATE pengaduan SET is_important = NOT COALESCE(is_important, FALSE) WHERE id = ?");
     $stmt->execute([$_POST['id']]);
-    header("Location: pengaduan.php?" . http_build_query($_GET)); exit;
+    header("Location: pengaduan.php"); exit;
 }
 // Tandai sudah dilakukan
 if (isset($_POST['aksi']) && $_POST['aksi'] == 'toggle_done') {
     $stmt = $pdo->prepare("UPDATE pengaduan SET is_done = NOT COALESCE(is_done, FALSE) WHERE id = ?");
     $stmt->execute([$_POST['id']]);
-    header("Location: pengaduan.php?" . http_build_query($_GET)); exit;
+    header("Location: pengaduan.php"); exit;
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['filter_pengaduan'])) {
+    $_SESSION['pengaduan_filter'] = [
+        'bulan' => $_POST['bulan'] ?? date('m'),
+        'tahun' => $_POST['tahun'] ?? date('Y'),
+        'penting' => $_POST['penting'] ?? ''
+    ];
+    header("Location: pengaduan.php");
+    exit;
+}
+
+if (!empty($_GET)) {
+    $session_filter = [];
+    if (isset($_GET['bulan'])) $session_filter['bulan'] = $_GET['bulan'];
+    if (isset($_GET['tahun'])) $session_filter['tahun'] = $_GET['tahun'];
+    if (isset($_GET['penting'])) $session_filter['penting'] = $_GET['penting'];
+    if (!empty($session_filter)) {
+        $_SESSION['pengaduan_filter'] = $session_filter;
+        header("Location: pengaduan.php");
+        exit;
+    }
 }
 
 // Filter Periode (Bulanan)
 $list_bulan = ['01'=>'Januari','02'=>'Februari','03'=>'Maret','04'=>'April','05'=>'Mei','06'=>'Juni','07'=>'Juli','08'=>'Agustus','09'=>'September','10'=>'Oktober','11'=>'November','12'=>'Desember'];
-$bulan_pilih = isset($_GET['bulan']) ? str_pad($_GET['bulan'], 2, '0', STR_PAD_LEFT) : date('m');
-$tahun_pilih = isset($_GET['tahun']) ? (int)$_GET['tahun'] : (int)date('Y');
-$filter_penting = isset($_GET['penting']) ? $_GET['penting'] : '';
+$pengaduan_filter = $_SESSION['pengaduan_filter'] ?? [];
+$bulan_pilih = isset($pengaduan_filter['bulan']) ? str_pad($pengaduan_filter['bulan'], 2, '0', STR_PAD_LEFT) : date('m');
+$tahun_pilih = isset($pengaduan_filter['tahun']) ? (int)$pengaduan_filter['tahun'] : (int)date('Y');
+$filter_penting = $pengaduan_filter['penting'] ?? '';
 
 // Data grafik (jumlah aduan per bulan pada tahun terpilih)
 $grafik_counts = array_fill(1, 12, 0);
@@ -140,7 +163,8 @@ $total_aduan = count($data);
         </div>
 
         <div class="card-msg mb-4">
-            <form method="GET" class="row g-2 align-items-end">
+            <form method="POST" class="row g-2 align-items-end">
+                <input type="hidden" name="filter_pengaduan" value="1">
                 <div class="col-md-4">
                     <label class="form-label fw-bold">Bulan</label>
                     <select name="bulan" class="form-select">
@@ -229,7 +253,7 @@ $total_aduan = count($data);
                             <?= !empty($row['is_done']) ? 'Batalkan Selesai' : 'Tandai Selesai' ?>
                         </button>
                     </form>
-                    <form method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus pesan ini? Data tidak bisa dikembalikan.')">
+                    <form method="POST" class="js-confirm" data-confirm-title="Hapus pesan?" data-confirm-text="Pesan ini akan dihapus permanen dan tidak bisa dikembalikan." data-confirm-button="Ya, hapus">
                         <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
                         <input type="hidden" name="aksi" value="hapus">
                         <input type="hidden" name="id" value="<?= $row['id'] ?>">
@@ -243,7 +267,36 @@ $total_aduan = count($data);
         <?php endif; ?>
     </main>
 
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
+        function bindConfirmForms(root = document) {
+            root.querySelectorAll('form.js-confirm').forEach((form) => {
+                if (form.dataset.confirmBound === '1') return;
+                form.dataset.confirmBound = '1';
+                form.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    const title = form.dataset.confirmTitle || 'Yakin?';
+                    const text = form.dataset.confirmText || 'Tindakan ini tidak dapat dibatalkan.';
+                    const confirmButton = form.dataset.confirmButton || 'Ya, lanjutkan';
+                    if (window.Swal) {
+                        Swal.fire({
+                            title,
+                            text,
+                            icon: 'warning',
+                            showCancelButton: true,
+                            confirmButtonText: confirmButton,
+                            cancelButtonText: 'Batal',
+                            reverseButtons: true
+                        }).then((result) => {
+                            if (result.isConfirmed) form.submit();
+                        });
+                    } else if (confirm(text)) {
+                        form.submit();
+                    }
+                });
+            });
+        }
+
         function toggleSidebar(open) {
             document.body.classList.toggle('sidebar-open', open);
         }
@@ -291,6 +344,8 @@ $total_aduan = count($data);
                 }
             }
         });
+
+        bindConfirmForms();
     </script>
     <script src="../assets/loader.js"></script>
 </body>

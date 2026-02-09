@@ -7,6 +7,39 @@ require '../config/admin_auth.php';
 // --- 1. SETTING ZONA WAKTU ---
 date_default_timezone_set('Asia/Makassar'); 
 
+// --- FILTER STATE (SESSION, CLEAN URL) ---
+$dashboard_filter = $_SESSION['dashboard_filter'] ?? [];
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['filter_chart'])) {
+    $dashboard_filter['tahun_chart'] = $_POST['tahun_chart'] ?? date('Y');
+    $_SESSION['dashboard_filter'] = $dashboard_filter;
+    header("Location: dashboard.php"); exit;
+}
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['filter_range'])) {
+    $dashboard_filter['range_start_bulan'] = $_POST['range_start_bulan'] ?? '01';
+    $dashboard_filter['range_start_tahun'] = $_POST['range_start_tahun'] ?? date('Y');
+    $dashboard_filter['range_end_bulan'] = $_POST['range_end_bulan'] ?? date('m');
+    $dashboard_filter['range_end_tahun'] = $_POST['range_end_tahun'] ?? date('Y');
+    $_SESSION['dashboard_filter'] = $dashboard_filter;
+    header("Location: dashboard.php"); exit;
+}
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['filter_periode'])) {
+    $dashboard_filter['bulan'] = $_POST['bulan'] ?? date('m');
+    $dashboard_filter['tahun'] = $_POST['tahun'] ?? date('Y');
+    $_SESSION['dashboard_filter'] = $dashboard_filter;
+    header("Location: dashboard.php"); exit;
+}
+if (!empty($_GET)) {
+    $keys = ['tahun_chart','range_start_bulan','range_start_tahun','range_end_bulan','range_end_tahun','bulan','tahun'];
+    $incoming = [];
+    foreach ($keys as $k) {
+        if (isset($_GET[$k])) $incoming[$k] = $_GET[$k];
+    }
+    if (!empty($incoming)) {
+        $_SESSION['dashboard_filter'] = array_merge($dashboard_filter, $incoming);
+        header("Location: dashboard.php"); exit;
+    }
+}
+
 // ==========================================
 // 2. LOGIKA STATUS & JADWAL
 // ==========================================
@@ -74,7 +107,8 @@ $infoTKM  = getStatusInfo('tkm', $settings);
 // ==========================================
 // 3. LOGIKA CHART DINAMIS
 // ==========================================
-$tahun_chart = isset($_GET['tahun_chart']) ? $_GET['tahun_chart'] : date('Y');
+$dashboard_filter = $_SESSION['dashboard_filter'] ?? $dashboard_filter;
+$tahun_chart = $dashboard_filter['tahun_chart'] ?? date('Y');
 
 function getDataBulanan($pdo, $jenis, $tahun) {
     $sql = "SELECT periode_bulan as bulan, COUNT(*) as total 
@@ -105,10 +139,10 @@ $chart_labels = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 
 // 4. TOTAL RESPONDEN (RENTANG PERIODE)
 // ==========================================
 $list_bulan = ['01'=>'Januari','02'=>'Februari','03'=>'Maret','04'=>'April','05'=>'Mei','06'=>'Juni','07'=>'Juli','08'=>'Agustus','09'=>'September','10'=>'Oktober','11'=>'November','12'=>'Desember'];
-$range_start_bulan = isset($_GET['range_start_bulan']) ? $_GET['range_start_bulan'] : '01';
-$range_start_tahun = isset($_GET['range_start_tahun']) ? $_GET['range_start_tahun'] : date('Y');
-$range_end_bulan = isset($_GET['range_end_bulan']) ? $_GET['range_end_bulan'] : date('m');
-$range_end_tahun = isset($_GET['range_end_tahun']) ? $_GET['range_end_tahun'] : date('Y');
+$range_start_bulan = $dashboard_filter['range_start_bulan'] ?? '01';
+$range_start_tahun = $dashboard_filter['range_start_tahun'] ?? date('Y');
+$range_end_bulan = $dashboard_filter['range_end_bulan'] ?? date('m');
+$range_end_tahun = $dashboard_filter['range_end_tahun'] ?? date('Y');
 
 $range_start_bulan = str_pad((int)$range_start_bulan, 2, '0', STR_PAD_LEFT);
 $range_end_bulan = str_pad((int)$range_end_bulan, 2, '0', STR_PAD_LEFT);
@@ -158,8 +192,8 @@ $total_responden_range = (int)$total_range_iplm + (int)$total_range_tkm;
 // ==========================================
 // 5. LOGIKA KARTU STATISTIK (BULANAN)
 // ==========================================
-$bulan_pilih = isset($_GET['bulan']) ? $_GET['bulan'] : date('m');
-$tahun_pilih = isset($_GET['tahun']) ? $_GET['tahun'] : date('Y');
+$bulan_pilih = $dashboard_filter['bulan'] ?? date('m');
+$tahun_pilih = $dashboard_filter['tahun'] ?? date('Y');
 $label_periode = $list_bulan[$bulan_pilih] . " " . $tahun_pilih;
 
 
@@ -297,10 +331,8 @@ $label_periode = $list_bulan[$bulan_pilih] . " " . $tahun_pilih;
                             <small class="text-muted"><?= number_format($total_responden_tahunan) ?> Total Responden (Tahun <?= $tahun_chart ?>)</small>
                         </div>
                         <div class="d-flex gap-2">
-                            <form method="GET" id="formChartYear">
-                                <input type="hidden" name="bulan" value="<?= $bulan_pilih ?>">
-                                <input type="hidden" name="tahun" value="<?= $tahun_pilih ?>">
-                                
+                            <form method="POST" id="formChartYear">
+                                <input type="hidden" name="filter_chart" value="1">
                                 <select name="tahun_chart" class="form-select form-select-sm border-secondary fw-bold" style="width: auto;" onchange="this.form.submit()">
                                     <?php 
                                     $thn_skrg = date('Y');
@@ -324,10 +356,8 @@ $label_periode = $list_bulan[$bulan_pilih] . " " . $tahun_pilih;
 
                             <div class="row g-3 align-items-stretch">
                                 <div class="col-lg-7">
-                                    <form method="GET" class="range-form row g-2 align-items-center">
-                                        <input type="hidden" name="tahun_chart" value="<?= $tahun_chart ?>">
-                                        <input type="hidden" name="bulan" value="<?= $bulan_pilih ?>">
-                                        <input type="hidden" name="tahun" value="<?= $tahun_pilih ?>">
+                                    <form method="POST" class="range-form row g-2 align-items-center">
+                                        <input type="hidden" name="filter_range" value="1">
                                         <div class="col-12 fw-bold small">DARI:</div>
                                         <div class="col-md-6 col-7">
                                             <select name="range_start_bulan" class="form-select">

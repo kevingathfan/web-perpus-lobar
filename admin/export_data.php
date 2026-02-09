@@ -17,12 +17,26 @@ use PhpOffice\PhpSpreadsheet\Cell\DataType;
 // Set Zona Waktu
 date_default_timezone_set('Asia/Makassar');
 
-// 1. TANGKAP PARAMETER URL
-$jenis = isset($_GET['jenis']) ? $_GET['jenis'] : '';
-$start_bln = isset($_GET['start_bulan']) ? str_pad($_GET['start_bulan'], 2, '0', STR_PAD_LEFT) : date('m');
-$start_thn = isset($_GET['start_tahun']) ? $_GET['start_tahun'] : date('Y');
-$end_bln   = isset($_GET['end_bulan']) ? str_pad($_GET['end_bulan'], 2, '0', STR_PAD_LEFT) : date('m');
-$end_thn   = isset($_GET['end_tahun']) ? $_GET['end_tahun'] : date('Y');
+function upper_str($value) {
+    if (!is_string($value)) {
+        return $value;
+    }
+    if (function_exists('mb_strtoupper')) {
+        return mb_strtoupper($value, 'UTF-8');
+    }
+    return strtoupper($value);
+}
+
+// 1. TANGKAP PARAMETER (POST -> SESSION -> GET)
+$filter = $_SESSION['hasil_kuisioner_filter'] ?? [];
+$jenis = $_POST['jenis'] ?? ($filter['jenis'] ?? ($_GET['jenis'] ?? ''));
+$start_bln = $_POST['start_bulan'] ?? ($filter['start_bulan'] ?? ($_GET['start_bulan'] ?? date('m')));
+$start_thn = $_POST['start_tahun'] ?? ($filter['start_tahun'] ?? ($_GET['start_tahun'] ?? date('Y')));
+$end_bln   = $_POST['end_bulan'] ?? ($filter['end_bulan'] ?? ($_GET['end_bulan'] ?? date('m')));
+$end_thn   = $_POST['end_tahun'] ?? ($filter['end_tahun'] ?? ($_GET['end_tahun'] ?? date('Y')));
+
+$start_bln = str_pad($start_bln, 2, '0', STR_PAD_LEFT);
+$end_bln = str_pad($end_bln, 2, '0', STR_PAD_LEFT);
 
 if (!in_array($jenis, ['iplm', 'tkm'])) {
     die("Error: Jenis laporan tidak valid.");
@@ -31,8 +45,8 @@ if (!in_array($jenis, ['iplm', 'tkm'])) {
 // 2. SETUP JUDUL & NAMA FILE
 $timestamp = date('Ymd_His');
 $filename = "Rekap_{$jenis}_{$start_bln}{$start_thn}_sd_{$end_bln}{$end_thn}.xlsx"; 
-$title_text = "REKAPITULASI DATA " . strtoupper($jenis);
-$periode_text = "Periode: $start_bln/$start_thn s.d. $end_bln/$end_thn";
+$title_text = upper_str("Rekapitulasi Data " . $jenis);
+$periode_text = upper_str("Periode: $start_bln/$start_thn s.d. $end_bln/$end_thn");
 
 // 3. AMBIL PERTANYAAN (HEADER KOLOM DINAMIS)
 // Penting: Ambil 'tipe_input' untuk konversi Likert nanti
@@ -52,7 +66,7 @@ $sql = "SELECT h.id as header_id, h.periode_bulan, h.periode_tahun,
         WHERE h.jenis_kuesioner = :jenis
         AND (CAST(CONCAT(h.periode_tahun, h.periode_bulan) AS INTEGER) >= :start_p)
         AND (CAST(CONCAT(h.periode_tahun, h.periode_bulan) AS INTEGER) <= :end_p)
-        ORDER BY h.periode_tahun DESC, h.periode_bulan DESC, h.id DESC";
+        ORDER BY h.id ASC";
 
 $stmtData = $pdo->prepare($sql);
 $stmtData->execute([
@@ -93,19 +107,19 @@ $row_head_1 = 4; // Baris Kategori
 $row_head_2 = 5; // Baris Pertanyaan
 
 // Kolom Identitas Dasar
-$sheet->setCellValue('A'.$row_head_1, 'NO'); $sheet->mergeCells("A$row_head_1:A$row_head_2");
-$sheet->setCellValue('B'.$row_head_1, 'PERIODE'); $sheet->mergeCells("B$row_head_1:B$row_head_2");
+$sheet->setCellValue('A'.$row_head_1, upper_str('NO')); $sheet->mergeCells("A$row_head_1:A$row_head_2");
+$sheet->setCellValue('B'.$row_head_1, upper_str('PERIODE')); $sheet->mergeCells("B$row_head_1:B$row_head_2");
 
 $col = 'C'; // [FIX] Mulai dari C (karena kolom Tanggal dihapus)
 
 // Header Identitas Perpus (Hanya IPLM)
 if ($jenis == 'iplm') {
-    $sheet->setCellValue($col.$row_head_1, 'NAMA PERPUSTAKAAN'); $sheet->mergeCells("{$col}{$row_head_1}:{$col}{$row_head_2}"); 
+    $sheet->setCellValue($col.$row_head_1, upper_str('NAMA PERPUSTAKAAN')); $sheet->mergeCells("{$col}{$row_head_1}:{$col}{$row_head_2}"); 
     $sheet->getColumnDimension($col)->setWidth(30); 
     $col++;
     
-    $sheet->setCellValue($col.$row_head_1, 'KATEGORI'); $sheet->mergeCells("{$col}{$row_head_1}:{$col}{$row_head_2}"); $col++;
-    $sheet->setCellValue($col.$row_head_1, 'JENIS'); $sheet->mergeCells("{$col}{$row_head_1}:{$col}{$row_head_2}"); $col++;
+    $sheet->setCellValue($col.$row_head_1, upper_str('KATEGORI')); $sheet->mergeCells("{$col}{$row_head_1}:{$col}{$row_head_2}"); $col++;
+    $sheet->setCellValue($col.$row_head_1, upper_str('JENIS')); $sheet->mergeCells("{$col}{$row_head_1}:{$col}{$row_head_2}"); $col++;
 } 
 // TKM: Langsung masuk ke pertanyaan (Kolom Asal Perpustakaan dihapus sesuai request)
 
@@ -127,7 +141,7 @@ foreach ($grouped_soal as $kategori => $items) {
     for ($i = 1; $i < $jml_soal; $i++) $col++; 
     $end_col = $col;
     
-    $sheet->setCellValue($start_col.$row_head_1, $kategori);
+    $sheet->setCellValue($start_col.$row_head_1, upper_str($kategori));
     if($start_col != $end_col) {
         $sheet->mergeCells("$start_col$row_head_1:$end_col$row_head_1");
     }
@@ -140,7 +154,7 @@ foreach ($grouped_soal as $kategori => $items) {
     // Header Bawah (Pertanyaan)
     $curr = $start_col;
     foreach ($items as $item) {
-        $sheet->setCellValue($curr.$row_head_2, $item['teks_pertanyaan']);
+        $sheet->setCellValue($curr.$row_head_2, upper_str($item['teks_pertanyaan']));
         $sheet->getColumnDimension($curr)->setWidth(20);
         $curr++;
     }
@@ -170,14 +184,14 @@ $no = 1;
 
 // Mapping Likert (Angka -> Huruf)
 $likert_map = [
-    '1' => 'Sangat Tidak Setuju',
-    '2' => 'Tidak Setuju',
-    '3' => 'Setuju',
-    '4' => 'Sangat Setuju'
+    '1' => upper_str('Sangat Tidak Setuju'),
+    '2' => upper_str('Tidak Setuju'),
+    '3' => upper_str('Setuju'),
+    '4' => upper_str('Sangat Setuju')
 ];
 
 if (empty($responden)) {
-    $sheet->setCellValue('A'.$row_num, 'Tidak ada data pada periode ini.');
+    $sheet->setCellValue('A'.$row_num, upper_str('Tidak ada data pada periode ini.'));
     $sheet->mergeCells("A$row_num:$last_col$row_num");
     $sheet->getStyle("A$row_num")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 } else {
@@ -188,9 +202,9 @@ if (empty($responden)) {
         $col = 'C'; // [FIX] Reset ke kolom C
         
         if ($jenis == 'iplm') {
-            $sheet->setCellValue($col++.$row_num, $row['nama_perpus'] ?? '-');
-            $sheet->setCellValue($col++.$row_num, $row['kategori'] ?? '-');
-            $sheet->setCellValue($col++.$row_num, $row['jenis_perpus'] ?? '-');
+            $sheet->setCellValue($col++.$row_num, upper_str($row['nama_perpus'] ?? '-'));
+            $sheet->setCellValue($col++.$row_num, upper_str($row['kategori'] ?? '-'));
+            $sheet->setCellValue($col++.$row_num, upper_str($row['jenis_perpus'] ?? '-'));
         }
 
         // Isi Jawaban
@@ -203,7 +217,7 @@ if (empty($responden)) {
                 $val = $likert_map[$val];
             }
             
-            $sheet->setCellValueExplicit($col++.$row_num, $val, DataType::TYPE_STRING);
+            $sheet->setCellValueExplicit($col++.$row_num, upper_str((string)$val), DataType::TYPE_STRING);
         }
         $row_num++;
     }

@@ -1,7 +1,19 @@
 <?php
 // web-perpus-v1/pustakawan/riwayat.php
+session_start();
 require '../config/database.php';
-$library_id = isset($_GET['library_id']) ? $_GET['library_id'] : '';
+
+if (!empty($_GET['library_id'])) {
+    $_SESSION['pustakawan_ctx']['library_id'] = $_GET['library_id'];
+    header("Location: riwayat.php");
+    exit;
+}
+
+$library_id = $_SESSION['pustakawan_ctx']['library_id'] ?? '';
+if (!$library_id) {
+    header("Location: pilih_perpustakaan.php");
+    exit;
+}
 
 // Contoh: Ambil riwayat dari database (Kode PHP Placeholder)
 // $stmt = $pdo->prepare("SELECT * FROM reports WHERE library_id = ?"); ...
@@ -37,10 +49,10 @@ $library_id = isset($_GET['library_id']) ? $_GET['library_id'] : '';
             <h2 class="m-0">Logo</h2>
             <button class="btn btn-sm btn-outline-dark d-lg-none" onclick="toggleSidebar(false)"><i class="bi bi-x-lg"></i></button>
         </div>
-        <a href="dashboard.php?library_id=<?= $library_id ?>" class="nav-link">Beranda</a>
-        <a href="kuisioner_iplm.php?library_id=<?= $library_id ?>" class="nav-link">Kuisioner IPLM</a>
-        <a href="kuisioner_tkm.php?library_id=<?= $library_id ?>" class="nav-link">Kuisioner TKM</a>
-        <a href="#" class="nav-link fw-bold">Riwayat</a> <a href="profil.php?library_id=<?= $library_id ?>" class="nav-link">Profil</a>
+        <a href="dashboard.php" class="nav-link">Beranda</a>
+        <a href="kuisioner_iplm.php" class="nav-link">Kuisioner IPLM</a>
+        <a href="kuisioner_tkm.php" class="nav-link">Kuisioner TKM</a>
+        <a href="#" class="nav-link fw-bold">Riwayat</a> <a href="profil.php" class="nav-link">Profil</a>
     </nav>
 
     <main class="main-content">
@@ -74,7 +86,7 @@ $library_id = isset($_GET['library_id']) ? $_GET['library_id'] : '';
                         <td>TKM</td>
                         <td>-</td>
                         <td><span class="badge bg-danger border border-dark text-white">Belum Mengisi</span></td>
-                        <td><a href="kuisioner_tkm.php?library_id=<?= $library_id ?>" class="btn btn-sm btn-dark">Isi Sekarang</a></td>
+                        <td><a href="kuisioner_tkm.php" class="btn btn-sm btn-dark">Isi Sekarang</a></td>
                     </tr>
                 </tbody>
                 </table>

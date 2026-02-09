@@ -1,8 +1,16 @@
 <?php
 // web-perpus-v1/pustakawan/pilih_perpustakaan.php
+session_start();
 require '../config/database.php';
 
-$target = isset($_GET['target']) ? $_GET['target'] : '../index.php'; 
+$ctx = $_SESSION['pustakawan_ctx'] ?? [];
+if (isset($_GET['target'])) {
+    $ctx['target'] = $_GET['target'];
+    $_SESSION['pustakawan_ctx'] = $ctx;
+    header("Location: pilih_perpustakaan.php");
+    exit;
+}
+$target = $ctx['target'] ?? '../index.php';
 
 // 1. Ambil Data Perpustakaan
 $stmt = $pdo->query("SELECT id, nama, jenis FROM libraries ORDER BY nama ASC");
@@ -45,7 +53,7 @@ foreach ($rawKategori as $row) {
           <h4 class="text-center fw-bold mb-3">Identitas Perpustakaan</h4>
           <p class="text-center text-muted small mb-4">Lengkapi data di bawah ini untuk melanjutkan.</p>
 
-          <form id="loginForm" method="GET">
+          <form id="loginForm" method="POST">
             <input type="hidden" name="target" value="<?= htmlspecialchars($target) ?>">
             <input type="hidden" name="nama_perpus_text" id="input_nama_text">
 

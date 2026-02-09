@@ -1,5 +1,6 @@
 <?php
 // web-perpus-v1/pustakawan/kuisioner_iplm.php
+session_start();
 require '../config/database.php';
 
 // --- CEK STATUS & JADWAL ---
@@ -66,11 +67,36 @@ if (!$isOpen) {
 // JIKA DIBUKA, LANJUT KE LOGIKA FORM
 require 'render_kuesioner.php'; 
 
-// 1. Tangkap Data dari URL (Pilih Perpustakaan)
-$library_id = isset($_GET['library_id']) ? $_GET['library_id'] : '';
-$kat_utama  = isset($_GET['kategori_utama']) ? $_GET['kategori_utama'] : '';
-$kat_sub    = isset($_GET['kategori_sub']) ? $_GET['kategori_sub'] : '';
-$nama_text  = isset($_GET['nama_perpus_text']) ? $_GET['nama_perpus_text'] : '';
+// 1. Tangkap Data (POST/GET -> session, lalu bersihkan URL)
+if (!empty($_POST) || !empty($_GET)) {
+    $incoming = [
+        'library_id' => $_POST['library_id'] ?? ($_GET['library_id'] ?? null),
+        'kategori_utama' => $_POST['kategori_utama'] ?? ($_GET['kategori_utama'] ?? null),
+        'kategori_sub' => $_POST['kategori_sub'] ?? ($_GET['kategori_sub'] ?? null),
+        'nama_perpus_text' => $_POST['nama_perpus_text'] ?? ($_GET['nama_perpus_text'] ?? null),
+    ];
+    $hasAny = false;
+    foreach ($incoming as $k => $v) {
+        if ($v !== null && $v !== '') {
+            $_SESSION['pustakawan_ctx'][$k] = $v;
+            $hasAny = true;
+        }
+    }
+    if ($hasAny || !empty($_GET)) {
+        header("Location: kuisioner_iplm.php");
+        exit;
+    }
+}
+
+$library_id = $_SESSION['pustakawan_ctx']['library_id'] ?? '';
+$kat_utama  = $_SESSION['pustakawan_ctx']['kategori_utama'] ?? '';
+$kat_sub    = $_SESSION['pustakawan_ctx']['kategori_sub'] ?? '';
+$nama_text  = $_SESSION['pustakawan_ctx']['nama_perpus_text'] ?? '';
+
+if (!$library_id) {
+    header("Location: pilih_perpustakaan.php");
+    exit;
+}
 
 // 2. Format Data untuk Auto-Fill (Menggunakan Kode Kunci)
 $auto_isi = [
@@ -93,7 +119,7 @@ $auto_isi = [
 <body>
     <?php include __DIR__ . '/../config/loader.php'; ?>
     <div class="container py-5" style="max-width: 900px;">
-        <a href="pilih_perpustakaan.php?target=iplm" class="text-decoration-none text-dark fw-bold mb-3 d-inline-block">&larr; Kembali</a>
+        <a href="pilih_perpustakaan.php" class="text-decoration-none text-dark fw-bold mb-3 d-inline-block">&larr; Kembali</a>
         
         <h2 class="text-center fw-bold mb-4">FORMULIR IPLM</h2>
         
