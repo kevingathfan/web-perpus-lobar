@@ -9,15 +9,30 @@
     <title>Dinas Kearsipan dan Perpustakaan - Lombok Barat</title>
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@500;600&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="assets/loader.css">
     <link rel="stylesheet" href="assets/public-responsive.css">
 
     <style>
+        :root {
+            --ink: #0b1220;
+            --muted: #5c6676;
+            --brand: #0b2b5b;
+            --brand-strong: #0a2246;
+            --accent: #c8a34a;
+            --paper: #ffffff;
+            --mist: #f3f5f8;
+            --border: rgba(11, 18, 32, 0.12);
+            --shadow: 0 18px 45px rgba(11, 18, 32, 0.12);
+        }
+
         body {
-            background-color: #ffffff;
-            font-family: 'Poppins', sans-serif;
+            background: radial-gradient(1100px 500px at 10% -10%, #e9f0ff 0%, rgba(233,240,255,0) 60%),
+                        radial-gradient(900px 600px at 90% 0%, #f6efe2 0%, rgba(246,239,226,0) 55%),
+                        var(--mist);
+            font-family: 'Manrope', sans-serif;
+            color: var(--ink);
             min-height: 100vh;
             display: flex;
             flex-direction: column;
@@ -28,98 +43,280 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding: 40px 20px;
+            padding: 28px 20px 56px;
+        }
+
+        .content-wrap {
+            width: 100%;
+            max-width: 1100px;
+            display: flex;
+            flex-direction: column;
+            gap: 22px;
         }
 
         /* ================= HEADER ================= */
         .header-box {
-            width:100%;
-            max-width: 1000px;
-            padding: 20px;
-            display: flex;
+            width: 100%;
+            max-width: 1100px;
+            padding: 18px 26px;
+            display: grid;
+            grid-template-columns: 140px 1fr 140px;
             align-items: center;
-            justify-content: space-between;
-            margin-bottom: 40px;
-            background: #fff;
-            background-image: linear-gradient(to bottom, #000 0px, #000 1px, transparent 1px, transparent 4px, #000 4px, #000 5px);
-            background-repeat: no-repeat;
-            background-size: 100% 5px;
-            background-position: bottom;
+            gap: 10px;
+            margin-bottom: 0;
+            background: rgba(255,255,255,0.92);
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+            backdrop-filter: blur(6px);
         }
 
-        .header-text { text-align: center; flex-grow: 1; }
-        .header-text h2 { font-size: 26px; font-weight: 600; margin: 0; }
-        .logo-img { height: 150px; width: 150px; object-fit: contain; }
+        .header-text { text-align: center; }
+        .header-text h2 {
+            font-size: 32px;
+            font-weight: 600;
+            margin: 0;
+            font-family: 'Crimson Pro', serif;
+            letter-spacing: 0.3px;
+        }
+        .header-text p { margin: 6px 0 0; color: var(--muted); font-weight: 500; font-size: 16px; }
+        .logo-img { height: 110px; width: 110px; object-fit: contain; margin: 0 auto; }
+
+        /* ================= HERO ================= */
+        .hero-panel {
+            background: linear-gradient(135deg, #0a2447 0%, #12386c 58%, #1f4a85 100%);
+            color: #f7f9fc;
+            border-radius: 18px;
+            padding: 30px 32px;
+            box-shadow: var(--shadow);
+            position: relative;
+            overflow: hidden;
+        }
+        .hero-panel::after {
+            content: "";
+            position: absolute;
+            right: -80px;
+            top: -120px;
+            width: 220px;
+            height: 220px;
+            background: radial-gradient(circle, rgba(200,163,74,0.45), rgba(200,163,74,0) 70%);
+        }
+        .hero-panel h1 {
+            font-family: 'Crimson Pro', serif;
+            font-size: 30px;
+            margin: 0 0 8px 0;
+            letter-spacing: 0.2px;
+        }
+        .hero-panel p {
+            margin: 0;
+            color: rgba(255,255,255,0.78);
+            font-size: 15px;
+        }
+        .hero-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 16px;
+        }
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            font-size: 12px;
+            color: #0a2447;
+            background: rgba(255,255,255,0.85);
+            padding: 6px 10px;
+            border-radius: 999px;
+        }
+        .stat-strip {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 14px;
+            margin-top: 14px;
+        }
+        .stat-card {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.15);
+            padding: 14px 16px;
+            border-radius: 12px;
+            color: #f7f9fc;
+        }
+        .stat-card strong { display: block; font-size: 18px; }
+        .stat-card span { font-size: 12px; color: rgba(255,255,255,0.7); }
 
         /* ================= INFO BOX ================= */
         .info-box {
-            max-width: 1000px;
-            background: #fff;
-            border: 1px solid #000;
-            border-radius: 15px;
-            padding: 40px;
-            margin: 0 40px 40px 40px;
-            box-shadow: 0px 4px 6px rgba(0,0,0,0.05);
-            text-align: center;
+            max-width: 1100px;
+            background: var(--paper);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 22px 26px;
+            margin: 0;
         }
 
-        .info-box h4 { font-size: 18px; line-height: 1.6; margin: 0; font-weight: 500; }
-        .info-footer { margin-top: 50px; text-align: left; }
+        .info-box h4 { font-size: 18px; line-height: 1.6; margin: 6px 0; font-weight: 600; }
+        .info-footer { margin-top: 36px; text-align: left; }
+
+        .section-lead {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 8px 6px 0;
+        }
+        .section-lead h3 {
+            margin: 0;
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--ink);
+        }
+        .section-lead p {
+            margin: 0;
+            color: var(--muted);
+            font-size: 14px;
+        }
 
         /* ================= CARD MENU ================= */
         .card-menu {
             position: relative;
-            background: #fff;
-            border: 1px solid #000;
-            border-radius: 15px;
-            padding: 30px 20px;
+            background: var(--paper);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 22px 24px;
             text-align: center;
-            height: 250px;
+            min-height: 210px;
             display: flex;
-            align-items: center;
-            justify-content: center;
+            align-items: flex-start;
+            justify-content: space-between;
             text-decoration: none;
-            color: #000;
-            box-shadow: 0px 4px 6px rgba(0,0,0,0.05);
-            transition: all 0.3s ease;
+            color: var(--ink);
+            transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
             overflow: hidden;
+            gap: 16px;
+            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+            animation: cardReveal 0.45s ease both;
+            will-change: transform, box-shadow;
         }
 
-        .card-menu h3 { font-size: 20px; font-weight: 500; line-height: 1.4; margin: 0; }
-        .card-menu::before {
-            content: ""; position: absolute; top: 0; left: 0; width: 6px; height: 100%;
-            background-color: #0d6efd; transform: scaleY(0); transform-origin: top; transition: transform 0.3s ease;
+        .card-menu .card-title { font-size: 20px; font-weight: 700; line-height: 1.3; margin: 0 0 6px 0; }
+        .card-menu .card-desc { font-size: 14px; color: var(--muted); margin: 0; }
+        .card-menu .card-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            padding: 4px 8px;
+            border-radius: 6px;
+            background: rgba(11,43,91,0.08);
+            color: var(--brand);
         }
-        .card-menu:hover { transform: translateY(-7px); box-shadow: 0 18px 32px rgba(0, 0, 0, 0.18); }
-        .card-menu:hover::before { transform: scaleY(1); }
+        .card-menu .card-cta {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 700;
+            color: var(--brand);
+        }
+        .card-menu .card-icon {
+            height: 52px;
+            width: 52px;
+            border-radius: 10px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(11,43,91,0.10);
+            color: var(--brand);
+            font-size: 24px;
+            flex: 0 0 auto;
+        }
+        .card-menu::after {
+            content: "";
+            position: absolute;
+            right: -30px;
+            top: -30px;
+            width: 120px;
+            height: 120px;
+            background: radial-gradient(circle, rgba(11,43,91,0.12), rgba(11,43,91,0) 70%);
+        }
+        .card-menu:hover {
+            border-color: rgba(11,43,91,0.28);
+            transform: translateY(-4px);
+            box-shadow: 0 18px 30px rgba(15, 23, 42, 0.12);
+        }
+        .card-menu:focus-visible {
+            outline: 3px solid rgba(11, 43, 91, 0.25);
+            outline-offset: 4px;
+        }
+        .card-menu:hover .card-icon {
+            transform: translateY(-2px);
+        }
+        .card-menu .card-icon {
+            transition: transform 0.22s ease;
+        }
+
+        .row.g-4 > :nth-child(1) .card-menu { animation-delay: 0.05s; }
+        .row.g-4 > :nth-child(2) .card-menu { animation-delay: 0.12s; }
+        .row.g-4 > :nth-child(3) .card-menu { animation-delay: 0.18s; }
+
+        @keyframes cardReveal {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
 
         /* Khusus Tombol Pengaduan */
         .card-aduan {
-            height: auto; min-height: 100px;
-            border-color: #198754; background-color: #f8fff9;
+            border-color: rgba(200,163,74,0.45);
+            background: linear-gradient(135deg, #fff9ef 0%, #fff 70%);
         }
-        .card-aduan::before { background-color: #198754; }
-        .card-aduan h3 { font-size: 18px; font-weight: 600; }
+        .card-aduan .card-icon {
+            background: rgba(200,163,74,0.18);
+            color: #8a6b21;
+        }
+        .card-aduan .card-cta { color: #8a6b21; }
 
         /* ================= MAIN FOOTER ================= */
         .main-footer {
-            background-color: #212529; /* Warna Gelap */
-            color: #adb5bd;
-            padding: 60px 0 20px 0;
+            background: linear-gradient(135deg, #0a1b33 0%, #0c2442 60%, #0f2d54 100%);
+            color: #c7d0dd;
+            padding: 70px 0 22px 0;
             margin-top: auto;
-            border-top: 5px solid #0d6efd;
+            border-top: 5px solid var(--accent);
         }
-        .main-footer h5 { color: #fff; font-weight: 700; margin-bottom: 20px; text-transform: uppercase; font-size: 16px; letter-spacing: 1px; }
+        .main-footer h5 {
+            color: #fff;
+            font-weight: 700;
+            margin-bottom: 18px;
+            text-transform: uppercase;
+            font-size: 15px;
+            letter-spacing: 1px;
+        }
         .main-footer p, .main-footer li { font-size: 14px; line-height: 1.8; }
-        .main-footer a { color: #adb5bd; text-decoration: none; transition: 0.3s; }
+        .main-footer a { color: #c7d0dd; text-decoration: none; transition: 0.3s; }
         .main-footer a:hover { color: #fff; padding-left: 5px; }
-        .footer-bottom { border-top: 1px solid #343a40; padding-top: 20px; margin-top: 40px; text-align: center; font-size: 13px; }
-        
+        .footer-bottom { border-top: 1px solid rgba(255,255,255,0.15); padding-top: 18px; margin-top: 40px; text-align: center; font-size: 13px; }
+
         .map-container iframe { width: 100%; height: 200px; border-radius: 10px; border:0; filter: grayscale(20%); }
         .map-container iframe:hover { filter: grayscale(0%); transition: 0.5s; }
-        
+
         .contact-item { display: flex; align-items: start; gap: 10px; margin-bottom: 15px; }
-        .contact-item i { color: #0d6efd; margin-top: 4px; font-size: 1.1rem; }
+        .contact-item i { color: var(--accent); margin-top: 4px; font-size: 1.1rem; }
+
+        @media (max-width: 768px) {
+            .header-box { grid-template-columns: 1fr; text-align: center; }
+            .header-text h2 { font-size: 26px; }
+            .header-text p { font-size: 14px; }
+            .logo-img { height: 88px; width: 88px; }
+            .section-lead { flex-direction: column; text-align: center; }
+            .stat-strip { grid-template-columns: 1fr; }
+        }
 
     </style>
 </head>
@@ -135,59 +332,83 @@
             <img src="assets/logo_disarpus.png" alt="Logo" class="logo-img">
         </div>
 
-        <div class="info-box">
-            <h4>
-                Kuisioner Pengukuran Indeks Pembangunan Literasi Masyarakat
-                dan Kegemaran Membaca Kabupaten Lombok Barat
-            </h4>
-        </div>
+        <div class="content-wrap">
+            <div class="hero-panel">
+                <h1>Kuisioner Indeks Pembangunan Literasi Masyarakat</h1>
+                <p>Instrumen resmi untuk mengukur literasi dan kegemaran membaca di Kabupaten Lombok Barat.</p>
+                <div class="stat-strip">
+                    <div class="stat-card">
+                        <strong>IPLM</strong>
+                        <span>Indeks Pembangunan Literasi</span>
+                    </div>
+                    <div class="stat-card">
+                        <strong>TKM</strong>
+                        <span>Tingkat Kegemaran Membaca</span>
+                    </div>
+                    <div class="stat-card">
+                        <strong>Layanan Publik</strong>
+                        <span>Pengaduan & Saran</span>
+                    </div>
+                </div>
+            </div>
 
-        <div class="mb-4 fs-5 fw-bold">Pilih Layanan</div>
+            <div class="section-lead">
+                <h3>Pilih Layanan</h3>
+                <p>Mulai dari layanan utama atau kirim pengaduan secara resmi.</p>
+            </div>
 
-        <div class="container" style="max-width: 900px;">
             <div class="row g-4">
                 <div class="col-md-6">
                     <a href="pustakawan/pilih_perpustakaan.php?target=iplm" class="card-menu">
-                        <h3>
-                            Kuisioner Pengukuran<br>
-                            Indeks Pembangunan<br>
-                            Literasi Masyarakat<br>
-                            (IPLM)
-                        </h3>
+                        <div class="d-flex flex-column text-start">
+                            <div class="card-chip mb-2"><i class="bi bi-clipboard-check"></i> Kuesioner Resmi</div>
+                            <div class="card-title">Indeks Pembangunan Literasi Masyarakat (IPLM)</div>
+                            <p class="card-desc">Ukur perkembangan literasi masyarakat secara menyeluruh.</p>
+                            <div class="card-cta mt-3">Mulai Kuesioner <i class="bi bi-arrow-right"></i></div>
+                        </div>
+                        <div class="card-icon">
+                            <i class="bi bi-bar-chart-line-fill"></i>
+                        </div>
                     </a>
                 </div>
 
                 <div class="col-md-6">
                     <a href="pustakawan/kuisioner_tkm.php?target=tkm" class="card-menu">
-                        <h3>
-                            Kuisioner<br>
-                            Tingkat Kegemaran<br>
-                            Membaca (TKM)
-                        </h3>
+                        <div class="d-flex flex-column text-start">
+                            <div class="card-chip mb-2"><i class="bi bi-clipboard-check"></i> Kuesioner Resmi</div>
+                            <div class="card-title">Tingkat Kegemaran Membaca (TKM)</div>
+                            <p class="card-desc">Gambarkan minat baca masyarakat di Lombok Barat.</p>
+                            <div class="card-cta mt-3">Mulai Kuesioner <i class="bi bi-arrow-right"></i></div>
+                        </div>
+                        <div class="card-icon">
+                            <i class="bi bi-book-half"></i>
+                        </div>
                     </a>
                 </div>
 
                 <div class="col-12">
                     <a href="pustakawan/form_pengaduan.php" class="card-menu card-aduan">
-                        <div class="d-flex align-items-center gap-3">
-                            <i class="bi bi-envelope-paper-heart-fill fs-1 text-success"></i>
-                            <div class="text-start">
-                                <h3>Layanan Pengaduan & Saran</h3>
-                                <small class="text-muted">Punya kritik, saran, atau keluhan? Sampaikan kepada kami disini.</small>
-                            </div>
+                        <div class="d-flex flex-column text-start">
+                            <div class="card-chip mb-2" style="background: rgba(200,163,74,0.18); color: #8a6b21;"><i class="bi bi-chat-heart-fill"></i> Layanan Publik</div>
+                            <div class="card-title">Pengaduan & Saran</div>
+                            <p class="card-desc">Sampaikan kritik, saran, atau keluhan agar layanan makin baik.</p>
+                            <div class="card-cta mt-2">Kirim Pengaduan <i class="bi bi-arrow-right"></i></div>
+                        </div>
+                        <div class="card-icon">
+                            <i class="bi bi-envelope-paper-heart-fill"></i>
                         </div>
                     </a>
                 </div>
             </div>
-        </div>
 
-        <div class="info-box info-footer">
-            <h6 class="fw-bold"><i class="bi bi-info-circle-fill me-2"></i>Mengapa kuisioner ini penting?</h6>
-            <p class="text-muted small mb-0">
-                Data yang Anda isikan sangat berharga untuk mengukur kemajuan literasi di daerah kita.
-                Hasil survei ini akan digunakan sebagai dasar pengambilan kebijakan pengembangan
-                perpustakaan di masa depan.
-            </p>
+            <div class="info-box info-footer">
+                <h6 class="fw-bold"><i class="bi bi-info-circle-fill me-2"></i>Mengapa kuisioner ini penting?</h6>
+                <p class="text-muted small mb-0">
+                    Data yang Anda isikan sangat berharga untuk mengukur kemajuan literasi di daerah kita.
+                    Hasil survei ini menjadi dasar pengambilan kebijakan pengembangan perpustakaan yang akurat,
+                    transparan, dan berkelanjutan.
+                </p>
+            </div>
         </div>
     </div>
 
@@ -197,7 +418,7 @@
                 <div class="col-lg-4 col-md-6">
                     <h5>Tentang Kami</h5>
                     <p class="mb-4">Dinas Kearsipan dan Perpustakaan Kabupaten Lombok Barat berkomitmen meningkatkan minat baca dan pengelolaan arsip yang profesional.</p>
-                    
+
                     <div class="contact-item">
                         <i class="bi bi-geo-alt-fill"></i>
                         <span>Jln. Raya BIL KM 21 Giri Menang Gerung, Kode Pos 83363</span>
@@ -231,7 +452,7 @@
             </div>
 
             <div class="footer-bottom">
-                <p class="mb-0">© <?= date('Y') ?> Dinas Kearsipan dan Perpustakaan Kab. Lombok Barat. All Rights Reserved.</p>
+                <p class="mb-0">&copy; <?= date('Y') ?> Dinas Kearsipan dan Perpustakaan Kab. Lombok Barat. All Rights Reserved.</p>
             </div>
         </div>
     </footer>

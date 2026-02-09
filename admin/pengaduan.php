@@ -111,7 +111,10 @@ $total_aduan = count($data);
         body { font-family: 'Poppins', sans-serif; background-color: #f8f9fa; overflow-x: hidden; }
         
         .sidebar { min-height: 100vh; width: 260px; background-color: #ffffff; border-right: 1px solid #e0e0e0; position: fixed; top: 0; left: 0; padding: 40px 20px; z-index: 100; }
-        .sidebar-header { font-weight: 800; font-size: 24px; margin-bottom: 50px; color: #000; text-align: center; letter-spacing: 1px; }
+        .sidebar-header { margin-bottom: 28px; display: flex; align-items: flex-start; justify-content: space-between; }
+        .sidebar-brand { display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; flex: 1; }
+        .sidebar-title { font-weight: 800; font-size: 22px; color: #000; letter-spacing: 2px; line-height: 1.2; }
+        .sidebar-logo { width: 64px; height: 64px; object-fit: contain; }
         
         .nav-link { color: #666; font-weight: 600; font-size: 15px; padding: 12px 20px; margin-bottom: 8px; border-radius: 8px; transition: all 0.3s; display: flex; align-items: center; gap: 10px; }
         .nav-link:hover, .nav-link.active { background-color: #000; color: #fff; }
@@ -130,8 +133,11 @@ $total_aduan = count($data);
     <div class="sidebar-backdrop" onclick="toggleSidebar(false)"></div>
 
     <nav class="sidebar">
-        <div class="d-flex justify-content-between align-items-center sidebar-header">
-            <span>DISARPUS</span>
+        <div class="sidebar-header">
+            <div class="sidebar-brand">
+                <span class="sidebar-title">DISARPUS</span>
+                <img src="../assets/logo_disarpus.png" alt="Logo Disarpus" class="sidebar-logo">
+            </div>
             <button class="btn btn-sm btn-outline-dark d-lg-none" onclick="toggleSidebar(false)"><i class="bi bi-x-lg"></i></button>
         </div>
         <div class="nav flex-column">
