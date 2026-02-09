@@ -219,7 +219,6 @@
                         <li class="mb-2"><a href="pustakawan/pilih_perpustakaan.php?target=iplm"><i class="bi bi-chevron-right small me-1"></i> Survei IPLM</a></li>
                         <li class="mb-2"><a href="pustakawan/kuisioner_tkm.php?target=tkm"><i class="bi bi-chevron-right small me-1"></i> Survei TKM</a></li>
                         <li class="mb-2"><a href="pustakawan/form_pengaduan.php"><i class="bi bi-chevron-right small me-1"></i> Pengaduan Masyarakat</a></li>
-                        <li class="mt-3"><a href="admin/login.php" class="text-white fw-bold"><i class="bi bi-lock-fill me-1"></i> Login Administrator</a></li>
                     </ul>
                 </div>
 
