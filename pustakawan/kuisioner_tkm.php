@@ -4,6 +4,7 @@ session_start();
 require '../config/database.php';
 
 // --- CEK STATUS & JADWAL ---
+date_default_timezone_set('Asia/Makassar');
 $stmtSet = $pdo->query("SELECT * FROM settings");
 $settings = $stmtSet->fetchAll(PDO::FETCH_KEY_PAIR);
 
@@ -16,17 +17,19 @@ if ($mode == 'manual') {
         $isOpen = true;
     }
 } else {
-    $now = date('Y-m-d H:i:s');
-    $start = $settings['tkm_start'] ?? '';
-    $end = $settings['tkm_end'] ?? '';
+    $now = time();
+    $start = str_replace('T', ' ', $settings['tkm_start'] ?? '');
+    $end = str_replace('T', ' ', $settings['tkm_end'] ?? '');
 
     if ($start && $end) {
-        if ($now >= $start && $now <= $end) {
+        $startTs = strtotime($start);
+        $endTs = strtotime($end);
+        if ($startTs && $endTs && $now >= $startTs && $now <= $endTs) {
             $isOpen = true;
-        } elseif ($now < $start) {
-            $pesanTutup = "Kuesioner belum dibuka.<br>Jadwal Buka: <strong>" . date('d M Y H:i', strtotime($start)) . "</strong>";
+        } elseif ($startTs && $now < $startTs) {
+            $pesanTutup = "Kuesioner belum dibuka.<br>Jadwal Buka: <strong>" . date('d M Y H:i', $startTs) . "</strong>";
         } else {
-            $pesanTutup = "Kuesioner sudah ditutup.<br>Batas Akhir: <strong>" . date('d M Y H:i', strtotime($end)) . "</strong>";
+            $pesanTutup = "Kuesioner sudah ditutup.<br>Batas Akhir: <strong>" . date('d M Y H:i', $endTs ?: strtotime($end)) . "</strong>";
         }
     } else {
         $pesanTutup = "Jadwal pengisian belum diatur oleh admin.";

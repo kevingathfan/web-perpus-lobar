@@ -76,9 +76,9 @@ $settings = $stmtSet->fetchAll(PDO::FETCH_KEY_PAIR);
 function getStatusInfo($jenis, $settings) {
     $mode = $settings[$jenis . '_mode'] ?? 'manual';
     $manualStatus = $settings['status_' . $jenis] ?? 'buka';
-    $start = $settings[$jenis . '_start'] ?? '';
-    $end = $settings[$jenis . '_end'] ?? '';
-    $now = date('Y-m-d H:i:s');
+    $start = str_replace('T', ' ', $settings[$jenis . '_start'] ?? '');
+    $end = str_replace('T', ' ', $settings[$jenis . '_end'] ?? '');
+    $now = time();
     $isOpen = false; $label = ""; $desc = "";
 
     if ($mode == 'manual') {
@@ -87,12 +87,14 @@ function getStatusInfo($jenis, $settings) {
         $desc = "Diatur secara manual.";
     } else {
         if ($start && $end) {
-            if ($now >= $start && $now <= $end) {
-                $isOpen = true; $label = "TERJADWAL: BERJALAN"; $desc = "Tutup: ".date('d M H:i', strtotime($end));
-            } elseif ($now < $start) {
-                $isOpen = false; $label = "TERJADWAL: MENUNGGU"; $desc = "Buka: ".date('d M H:i', strtotime($start));
+            $startTs = strtotime($start);
+            $endTs = strtotime($end);
+            if ($startTs && $endTs && $now >= $startTs && $now <= $endTs) {
+                $isOpen = true; $label = "TERJADWAL: BERJALAN"; $desc = "Tutup: ".date('d M H:i', $endTs);
+            } elseif ($startTs && $now < $startTs) {
+                $isOpen = false; $label = "TERJADWAL: MENUNGGU"; $desc = "Buka: ".date('d M H:i', $startTs);
             } else {
-                $isOpen = false; $label = "TERJADWAL: SELESAI"; $desc = "Tutup: ".date('d M H:i', strtotime($end));
+                $isOpen = false; $label = "TERJADWAL: SELESAI"; $desc = "Tutup: ".date('d M H:i', $endTs ?: strtotime($end));
             }
         } else {
             $isOpen = false; $label = "TERJADWAL: BELUM SET"; $desc = "Atur tanggal dulu.";

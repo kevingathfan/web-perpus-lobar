@@ -4,6 +4,7 @@ require 'config/database.php';
 require 'config/public_security.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    date_default_timezone_set('Asia/Makassar');
     verify_public_csrf();
     // [PERBAIKAN] Cek apakah library_id kosong? Jika ya, ubah jadi NULL
     $library_id = !empty($_POST['library_id']) ? $_POST['library_id'] : null;
