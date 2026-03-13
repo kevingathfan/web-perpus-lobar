@@ -1,12 +1,21 @@
 <?php
 // web-perpus-v1/admin/login.php
 session_start();
-require '../config/database.php'; // Hubungkan database jika ingin verifikasi real
+require '../config/database.php';
+
+// Generate CSRF token if not exists
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
 
 $error = '';
 
 // --- LOGIKA LOGIN SEDERHANA ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Verify CSRF token
+    if (!isset($_POST['csrf_token']) || !hash_equals($_SESSION['csrf_token'], $_POST['csrf_token'])) {
+        $error = 'Invalid security token. Please try again.';
+    } else {
     $max_attempts = 5;
     $lock_minutes = 5;
     $now = time();
@@ -69,7 +78,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         @file_put_contents($rate_file, json_encode($rate_data));
     }
     }
-}
+    } // Close CSRF verification
+} // Close POST method check
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -79,145 +89,59 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <title>Login Admin - Dinas Kearsipan dan Perpustakaan</title>
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="../assets/govtech.css">
     <link rel="stylesheet" href="../assets/loader.css">
-    
-    <style>
-        body {
-            background-color: #f8f9fa;
-            font-family: 'Poppins', sans-serif;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .login-card {
-            width: 100%;
-            max-width: 450px;
-            background: #ffffff;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
-            border: 1px solid #e0e0e0;
-            overflow: hidden;
-        }
-
-        /* Hiasan Header Card */
-        .card-header-custom {
-            background-color: #ffffff;
-            padding: 30px 30px 10px 30px;
-            text-align: center;
-            border-bottom: none;
-        }
-
-        .logo-wrapper {
-            display: flex;
-            justify-content: center;
-            gap: 20px;
-            margin-bottom: 20px;
-        }
-
-        .logo-img {
-            height: 60px;
-            object-fit: contain;
-        }
-
-        .card-body-custom {
-            padding: 20px 40px 40px 40px;
-        }
-
-        .form-label {
-            font-weight: 600;
-            font-size: 14px;
-            color: #333;
-        }
-
-        .form-control {
-            padding: 12px;
-            border-radius: 8px;
-            border: 1px solid #ccc;
-            font-size: 14px;
-        }
-        
-        .form-control:focus {
-            border-color: #000;
-            box-shadow: 0 0 0 3px rgba(0,0,0,0.1);
-        }
-
-        .btn-login {
-            background-color: #000;
-            color: #fff;
-            border: none;
-            padding: 12px;
-            border-radius: 8px;
-            font-weight: 600;
-            width: 100%;
-            transition: all 0.3s;
-            margin-top: 20px;
-        }
-
-        .btn-login:hover {
-            background-color: #333;
-            transform: translateY(-2px);
-        }
-
-        .back-link {
-            display: block;
-            text-align: center;
-            margin-top: 20px;
-            color: #666;
-            text-decoration: none;
-            font-size: 13px;
-        }
-        
-        .back-link:hover { color: #000; }
-
-        .alert-custom {
-            font-size: 13px;
-            padding: 10px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
-    </style>
 </head>
-<body>
+<body class="d-flex align-items-center justify-content-center min-vh-100 bg-light">
     <?php include __DIR__ . '/../config/loader.php'; ?>
 
-    <div class="login-card">
-        <div class="card-header-custom">
-            <div class="logo-wrapper">
-                <img src="../assets/logo_lobar.png" alt="Lobar" class="logo-img">
-                <img src="../assets/logo_disarpus.png" alt="Disarpus" class="logo-img">
+    <div class="card-clean p-4 p-md-5 shadow-lg" style="max-width: 450px; width: 100%; background: #fff;">
+        <div class="text-center mb-4">
+            <div class="d-flex justify-content-center gap-3 mb-4">
+                <img src="../assets/logo_lobar.png" alt="Lobar" style="height: 60px;">
+                <img src="../assets/logo_disarpus.png" alt="Disarpus" style="height: 60px;">
             </div>
-            <h5 class="fw-bold mb-1">LOGIN ADMIN</h5>
+            <h4 class="fw-extrabold mb-1 text-dark">LOGIN ADMIN</h4>
             <p class="text-muted small mb-0">Portal Dinas Kearsipan & Perpustakaan</p>
         </div>
 
-        <div class="card-body-custom">
+        <?php if($error): ?>
+            <div class="alert alert-danger border-0 bg-danger-subtle text-danger small mb-4 rounded-3 text-center">
+                <i class="bi bi-exclamation-triangle-fill me-1"></i> <?= $error ?>
+            </div>
+        <?php endif; ?>
+
+        <form method="POST">
+            <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
             
-            <?php if($error): ?>
-                <div class="alert alert-danger alert-custom text-center">
-                    <?= $error ?>
+            <div class="mb-3">
+                <label class="form-label small fw-bold text-muted">USERNAME / NAMA</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0"><i class="bi bi-person text-muted"></i></span>
+                    <input type="text" name="username" class="form-control border-start-0 ps-0" placeholder="Masukkan nama..." required autofocus>
                 </div>
-            <?php endif; ?>
+            </div>
 
-            <form method="POST">
-                <div class="mb-3">
-                    <label class="form-label">Nama</label>
-                    <input type="text" name="username" class="form-control" placeholder="Masukkan nama..." required autofocus>
+            <div class="mb-4">
+                <label class="form-label small fw-bold text-muted">PASSWORD</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0"><i class="bi bi-lock text-muted"></i></span>
+                    <input type="password" name="password" class="form-control border-start-0 ps-0" placeholder="Masukkan password..." required>
                 </div>
+            </div>
 
-                <div class="mb-3">
-                    <label class="form-label">Password</label>
-                    <input type="password" name="password" class="form-control" placeholder="Masukkan password..." required>
-                </div>
+            <button type="submit" class="btn btn-primary w-100 py-2 fw-bold rounded-pill shadow-sm mb-4">
+                MASUK DASHBOARD <i class="bi bi-arrow-right ms-2"></i>
+            </button>
 
-                <button type="submit" class="btn-login">MASUK DASHBOARD</button>
-
-                <a href="forgot_password.php" class="back-link">Lupa Password?</a>
-                <a href="../index.php" class="back-link">&larr; Kembali ke Halaman Depan</a>
-            </form>
-        </div>
+            <div class="text-center border-top pt-3">
+                <a href="../index.php" class="text-decoration-none small text-muted d-inline-flex align-items-center hover-scale">
+                    <i class="bi bi-arrow-left me-1"></i> Kembali ke Halaman Depan
+                </a>
+            </div>
+        </form>
     </div>
 
     <script src="../assets/loader.js"></script>

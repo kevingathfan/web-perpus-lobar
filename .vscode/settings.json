@@ -1,0 +1,8 @@
+{
+    "chat.tools.terminal.autoApprove": {
+        "/^php compare_display\\.php 2>&1 \\| Select-Object -First 50$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    }
+}

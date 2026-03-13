@@ -10,7 +10,7 @@ $settings = $stmtSet->fetchAll(PDO::FETCH_KEY_PAIR);
 
 $mode = $settings['iplm_mode'] ?? 'manual';
 $isOpen = false;
-$pesanTutup = "Periode Pengisian Kuisioner Belum Di buka";
+$pesanTutup = "Periode Pengisian Kuisioner Belum Dibuka";
 
 if ($mode == 'manual') {
     // Mode Manual: Cek status_iplm
@@ -46,19 +46,92 @@ if (!$isOpen) {
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Akses Ditutup</title>
+        <title>Akses Ditutup - DISARPUS</title>
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+        <link rel="stylesheet" href="../assets/govtech.css">
         <link rel="stylesheet" href="../assets/loader.css">
-        <style>body{font-family:"Poppins",sans-serif;}</style>
+        <style>
+            body { 
+                font-family: 'Plus Jakarta Sans', sans-serif; 
+                background-color: #f8fafc;
+                min-height: 100vh;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 20px;
+                overflow: hidden;
+            }
+            .bg-pattern {
+                position: fixed;
+                top: 0; left: 0; width: 100%; height: 100%;
+                z-index: -1;
+                background-image: 
+                    radial-gradient(circle at 10% 20%, rgba(15, 82, 186, 0.04) 0%, transparent 40%),
+                    radial-gradient(circle at 90% 80%, rgba(244, 196, 48, 0.04) 0%, transparent 40%),
+                    linear-gradient(#e2e8f0 1px, transparent 1px),
+                    linear-gradient(90deg, #e2e8f0 1px, transparent 1px);
+                background-size: 100% 100%, 100% 100%, 40px 40px, 40px 40px;
+                mask-image: radial-gradient(circle at center, black 40%, transparent 100%);
+            }
+            .main-card {
+                background: rgba(255, 255, 255, 0.9);
+                backdrop-filter: blur(12px);
+                -webkit-backdrop-filter: blur(12px);
+                border: 1px solid #e2e8f0;
+                border-radius: 24px;
+                padding: 50px 40px;
+                max-width: 500px;
+                width: 100%;
+                text-align: center;
+                box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05);
+            }
+            .icon-box {
+                width: 80px;
+                height: 80px;
+                background: #fff5f5;
+                color: #e3342f;
+                border-radius: 20px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 2.5rem;
+                margin: 0 auto 25px;
+                border: 1px solid #fee2e2;
+            }
+            .btn-gov {
+                background: #0f172a;
+                color: white;
+                padding: 12px 30px;
+                border-radius: 50px;
+                font-weight: 700;
+                text-decoration: none;
+                transition: 0.3s;
+                display: inline-flex;
+                align-items: center;
+                gap: 10px;
+            }
+            .btn-gov:hover {
+                background: #000;
+                transform: translateY(-2px);
+                box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+                color: white;
+            }
+        </style>
     </head>
-    <body class="d-flex align-items-center justify-content-center vh-100 bg-light">
+    <body>
         <?php include __DIR__ . '/../config/loader.php'; ?>
-        <div class="text-center p-5 bg-white rounded-4 shadow-sm border" style="max-width:500px;">
-            <div class="mb-4 text-danger display-1"><i class="bi bi-lock-fill"></i></div>
-            <h2 class="fw-bold text-danger mb-3">Akses Ditutup</h2>
-            <p class="text-muted mb-4"><?= $pesanTutup ?></p>
-            <a href="../index.php" class="btn btn-dark rounded-pill px-4 fw-bold">Kembali ke Beranda</a>
+        <div class="bg-pattern"></div>
+        <div class="main-card">
+            <div class="icon-box">
+                <i class="bi bi-lock-fill"></i>
+            </div>
+            <h2 class="fw-bold text-dark mb-2">Akses Ditutup</h2>
+            <p class="text-muted mb-4 fs-6"><?= $pesanTutup ?></p>
+            <a href="../index.php" class="btn-gov">
+                <i class="bi bi-arrow-left"></i> Kembali ke Beranda
+            </a>
         </div>
         <script src="../assets/loader.js"></script>
     </body>
@@ -117,10 +190,28 @@ $auto_isi = [
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../assets/loader.css">
     <link rel="stylesheet" href="../assets/public-responsive.css">
-    <style>body { font-family: 'Poppins', sans-serif; background-color: #f8f9fa;}</style>
+    <style>
+        body { font-family: 'Poppins', sans-serif; background-color: var(--bg-body, #f8fafc); position: relative; overflow-x: hidden; min-height: 100vh; }
+        
+        /* Animated Background Pattern consistent with index */
+        .bg-pattern {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: -1;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(15, 82, 186, 0.04) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(244, 196, 48, 0.04) 0%, transparent 40%),
+                linear-gradient(#e2e8f0 1px, transparent 1px),
+                linear-gradient(90deg, #e2e8f0 1px, transparent 1px);
+            background-size: 100% 100%, 100% 100%, 40px 40px, 40px 40px;
+            background-position: 0 0, 0 0, 0 0, 0 0;
+            mask-image: radial-gradient(circle at center, black 40%, transparent 100%);
+        }
+    </style>
 </head>
 <body>
     <?php include __DIR__ . '/../config/loader.php'; ?>
+    <div class="bg-pattern"></div>
     <div class="container py-5" style="max-width: 900px;">
         <a href="pilih_perpustakaan.php" class="text-decoration-none text-dark fw-bold mb-3 d-inline-block">&larr; Kembali</a>
         

@@ -6,8 +6,8 @@ require '../config/admin_auth.php';
 
 // Pastikan kolom is_important dan is_done tersedia
 try {
-    $pdo->exec("ALTER TABLE pengaduan ADD COLUMN IF NOT EXISTS is_important BOOLEAN DEFAULT FALSE");
-    $pdo->exec("ALTER TABLE pengaduan ADD COLUMN IF NOT EXISTS is_done BOOLEAN DEFAULT FALSE");
+    $pdo->exec("ALTER TABLE pengaduan ADD COLUMN IF NOT EXISTS is_important TINYINT(1) NOT NULL DEFAULT 0");
+    $pdo->exec("ALTER TABLE pengaduan ADD COLUMN IF NOT EXISTS is_done TINYINT(1) NOT NULL DEFAULT 0");
 } catch (Exception $e) {}
 
 // Hapus Pengaduan
@@ -99,181 +99,247 @@ $total_aduan = count($data);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Data Pengaduan - Admin</title>
+    <title>Layanan Pengaduan - Admin Royal GovTech</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="../assets/govtech.css">
+    <link rel="stylesheet" href="../assets/admin-readability.css">
     <link rel="stylesheet" href="../assets/loader.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="stylesheet" href="../assets/admin-responsive.css">
-    <style>
-        /* CSS DISAMAKAN DENGAN DASHBOARD.PHP */
-        body { font-family: 'Poppins', sans-serif; background-color: #f8f9fa; overflow-x: hidden; }
-        
-        .sidebar { min-height: 100vh; width: 260px; background-color: #ffffff; border-right: 1px solid #e0e0e0; position: fixed; top: 0; left: 0; padding: 40px 20px; z-index: 100; }
-        .sidebar-header { margin-bottom: 28px; display: flex; align-items: flex-start; justify-content: space-between; }
-        .sidebar-brand { display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; flex: 1; }
-        .sidebar-title { font-weight: 800; font-size: 22px; color: #000; letter-spacing: 2px; line-height: 1.2; }
-        .sidebar-logo { width: 64px; height: 64px; object-fit: contain; }
-        
-        .nav-link { color: #666; font-weight: 600; font-size: 15px; padding: 12px 20px; margin-bottom: 8px; border-radius: 8px; transition: all 0.3s; display: flex; align-items: center; gap: 10px; }
-        .nav-link:hover, .nav-link.active { background-color: #000; color: #fff; }
-        
-        .main-content { margin-left: 260px; padding: 40px 50px; }
-        
-        /* STYLE KHUSUS KARTU PESAN */
-        .card-msg { border: 1px solid #e0e0e0; border-radius: 16px; background: #fff; padding: 25px; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.03); transition: transform 0.2s; }
-        .card-msg:hover { transform: translateY(-3px); }
-        .bg-pesan { background-color: #f8f9fa; border-radius: 12px; padding: 15px; border: 1px dashed #dee2e6; }
-        .chart-wrap { background: #fff; border: 1px solid #e0e0e0; border-radius: 16px; padding: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.03); }
-    </style>
 </head>
 <body>
     <?php include __DIR__ . '/../config/loader.php'; ?>
     <div class="sidebar-backdrop" onclick="toggleSidebar(false)"></div>
 
+    <!-- Sidebar -->
     <nav class="sidebar">
         <div class="sidebar-header">
             <div class="sidebar-brand">
-                <span class="sidebar-title">DISARPUS</span>
-                <img src="../assets/logo_disarpus.png" alt="Logo Disarpus" class="sidebar-logo">
+                <h6 class="mb-0 fw-bold">ADMIN PANEL</h6>
             </div>
-            <button class="btn btn-sm btn-outline-dark d-lg-none" onclick="toggleSidebar(false)"><i class="bi bi-x-lg"></i></button>
+            <button class="btn btn-sm btn-light d-lg-none" onclick="toggleSidebar(false)">
+                <i class="bi bi-x-lg"></i>
+            </button>
         </div>
-        <div class="nav flex-column">
-            <a href="dashboard.php" class="nav-link"><i class="bi bi-grid-fill"></i> DASHBOARD</a>
-            <a href="perpustakaan.php" class="nav-link"><i class="bi bi-building"></i> PERPUSTAKAAN</a>
-            <a href="hasil_kuisioner.php" class="nav-link"><i class="bi bi-table"></i> HASIL KUISIONER</a>
-            <a href="atur_pertanyaan.php" class="nav-link"><i class="bi bi-file-text"></i> KUISIONER</a>
-            <a href="pengaduan.php" class="nav-link active"><i class="bi bi-chat-left-text"></i> PENGADUAN</a>
-            <a href="users.php" class="nav-link"><i class="bi bi-people-fill"></i> ADMIN</a>
-            <div class="mt-5 pt-5 border-top">
-                <a href="logout.php" class="nav-link text-danger"><i class="bi bi-box-arrow-left"></i> KELUAR</a>
-            </div>
+        
+        <div class="nav flex-column gap-1">
+            <div class="sidebar-label">Utama</div>
+            <a href="dashboard.php" class="nav-link">
+                <i class="bi bi-grid-fill"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="perpustakaan.php" class="nav-link">
+                <i class="bi bi-building"></i>
+                <span>Perpustakaan</span>
+            </a>
+            
+            <div class="sidebar-label mt-3">Pelaporan</div>
+            <a href="hasil_kuisioner.php" class="nav-link">
+                <i class="bi bi-file-earmark-bar-graph"></i>
+                <span>Hasil Kuesioner</span>
+            </a>
+            <a href="atur_pertanyaan.php" class="nav-link">
+                <i class="bi bi-gear-wide-connected"></i>
+                <span>Atur Pertanyaan</span>
+            </a>
+            <a href="pengaduan.php" class="nav-link active">
+                <i class="bi bi-chat-left-text-fill"></i>
+                <span>Pengaduan</span>
+            </a>
+
+            <div class="sidebar-label mt-3">Sistem</div>
+            <a href="users.php" class="nav-link">
+                <i class="bi bi-people-fill"></i>
+                <span>Admin Users</span>
+            </a>
+            <a href="logout.php" class="nav-link text-danger mt-3">
+                <i class="bi bi-box-arrow-right"></i>
+                <span>Keluar</span>
+            </a>
         </div>
     </nav>
 
+    <!-- Main Content -->
     <main class="main-content">
-        <div class="d-flex justify-content-between align-items-center mb-4 page-header">
-            <div class="d-flex align-items-center gap-2">
-                <button class="btn btn-dark btn-sm d-lg-none" onclick="toggleSidebar(true)"><i class="bi bi-list"></i></button>
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4 gap-3 flex-wrap">
+            <div class="d-flex align-items-center gap-3">
+                <button class="btn btn-white shadow-sm d-lg-none" onclick="toggleSidebar(true)">
+                    <i class="bi bi-list"></i>
+                </button>
                 <div>
-                    <h2 class="fw-bold m-0 page-title">Layanan Pengaduan</h2>
-                    <p class="text-muted m-0 page-subtitle">Daftar kritik, saran, dan laporan masuk.</p>
+                    <h2 class="fw-bold mb-0 text-dark">Layanan Pengaduan</h2>
+                    <p class="text-muted mb-0">Kelola kritik, saran, dan laporan dari masyarakat.</p>
                 </div>
             </div>
             <div class="d-flex align-items-center gap-2">
-                <span class="badge bg-dark rounded-pill px-3 py-2">Total Aduan: <?= number_format($total_aduan) ?></span>
-                <button class="btn btn-dark btn-sm rounded-pill px-3"><?= ($list_bulan[$bulan_pilih] ?? $bulan_pilih) . ' ' . $tahun_pilih ?></button>
+                <div class="bg-white px-3 py-2 rounded-pill shadow-sm border d-flex align-items-center gap-2">
+                    <i class="bi bi-calendar-check text-primary"></i>
+                    <span class="fw-bold text-dark small"><?= ($list_bulan[$bulan_pilih] ?? $bulan_pilih) . ' ' . $tahun_pilih ?></span>
+                </div>
+                <div class="bg-primary text-white px-3 py-2 rounded-pill shadow-sm d-flex align-items-center gap-2">
+                    <i class="bi bi-inbox-fill"></i>
+                    <span class="fw-bold small"><?= number_format($total_aduan) ?> Aduan</span>
+                </div>
             </div>
         </div>
 
-        <div class="card-msg mb-4">
-            <form method="POST" class="row g-2 align-items-end">
-                <input type="hidden" name="filter_pengaduan" value="1">
-                <div class="col-md-4">
-                    <label class="form-label fw-bold">Bulan</label>
-                    <select name="bulan" class="form-select">
-                        <?php foreach ($list_bulan as $k => $v): ?>
-                            <option value="<?= $k ?>" <?= ($k == $bulan_pilih) ? 'selected' : '' ?>><?= $v ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                <div class="col-md-4">
-                    <label class="form-label fw-bold">Tahun</label>
-                    <select name="tahun" class="form-select">
-                        <?php for($t = date('Y'); $t >= date('Y')-3; $t--): ?>
-                            <option value="<?= $t ?>" <?= ($t == $tahun_pilih) ? 'selected' : '' ?>><?= $t ?></option>
-                        <?php endfor; ?>
-                    </select>
-                </div>
-                <div class="col-md-4">
-                    <label class="form-label fw-bold">Filter Pesan</label>
-                    <select name="penting" class="form-select">
-                        <option value="" <?= ($filter_penting === '') ? 'selected' : '' ?>>Semua</option>
-                        <option value="1" <?= ($filter_penting === '1') ? 'selected' : '' ?>>Penting / Bermanfaat</option>
-                        <option value="0" <?= ($filter_penting === '0') ? 'selected' : '' ?>>Biasa</option>
-                    </select>
-                </div>
-                <div class="col-md-4 d-grid">
-                    <button type="submit" class="btn btn-dark fw-bold">Terapkan Filter</button>
-                </div>
-            </form>
-        </div>
-
-        <div class="chart-wrap mb-4">
-            <div class="d-flex justify-content-between align-items-center mb-2">
-                <div>
-                    <h6 class="fw-bold mb-0">Grafik Aduan per Bulan</h6>
-                    <small class="text-muted">Tahun <?= $tahun_pilih ?></small>
+        <!-- Filter & Chart Row -->
+        <div class="row g-4 mb-4">
+            <!-- Filter -->
+            <div class="col-lg-4">
+                <div class="card-clean h-100">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center gap-2 mb-4">
+                            <div class="bg-primary-subtle d-flex align-items-center justify-content-center rounded-circle text-primary" style="width: 40px; height: 40px; flex-shrink: 0;">
+                                <i class="bi bi-funnel-fill"></i>
+                            </div>
+                            <h6 class="fw-bold mb-0">Filter Data</h6>
+                        </div>
+                        <form method="POST" class="row g-3">
+                            <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
+                            <input type="hidden" name="filter_pengaduan" value="1">
+                            
+                            <div class="col-12">
+                                <label class="form-label small text-muted text-uppercase fw-bold">Bulan</label>
+                                <select name="bulan" class="form-select bg-light border-0">
+                                    <?php foreach ($list_bulan as $k => $v): ?>
+                                        <option value="<?= $k ?>" <?= ($k == $bulan_pilih) ? 'selected' : '' ?>><?= $v ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label small text-muted text-uppercase fw-bold">Tahun</label>
+                                <select name="tahun" class="form-select bg-light border-0">
+                                    <?php for($t = date('Y'); $t >= date('Y')-3; $t--): ?>
+                                        <option value="<?= $t ?>" <?= ($t == $tahun_pilih) ? 'selected' : '' ?>><?= $t ?></option>
+                                    <?php endfor; ?>
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label small text-muted text-uppercase fw-bold">Status Pesan</label>
+                                <select name="penting" class="form-select bg-light border-0">
+                                    <option value="" <?= ($filter_penting === '') ? 'selected' : '' ?>>Semua Pesan</option>
+                                    <option value="1" <?= ($filter_penting === '1') ? 'selected' : '' ?>>Ditandai Penting</option>
+                                    <option value="0" <?= ($filter_penting === '0') ? 'selected' : '' ?>>Biasa</option>
+                                </select>
+                            </div>
+                            <div class="col-12 pt-2">
+                                <button type="submit" class="btn btn-primary w-100 rounded-pill fw-bold shadow-sm">
+                                    <i class="bi bi-search me-2"></i>Terapkan Filter
+                                </button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             </div>
-            <div style="height: 260px;">
-                <canvas id="chartPengaduan"></canvas>
+            
+            <!-- Chart -->
+            <div class="col-lg-8">
+                <div class="card-clean h-100">
+                    <div class="card-body p-4">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="bg-warning-subtle d-flex align-items-center justify-content-center rounded-circle text-warning-emphasis" style="width: 40px; height: 40px; flex-shrink: 0;">
+                                    <i class="bi bi-bar-chart-fill"></i>
+                                </div>
+                                <h6 class="fw-bold mb-0">Statistik Aduan</h6>
+                            </div>
+                            <span class="badge bg-light text-muted border">Tahun <?= $tahun_pilih ?></span>
+                        </div>
+                        <div style="height: 300px;">
+                            <canvas id="chartPengaduan"></canvas>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
+        <!-- Message List -->
         <?php if(empty($data)): ?>
-            <div class="alert alert-light border text-center py-5 rounded-4">
-                <i class="bi bi-inbox fs-1 text-muted mb-3 d-block"></i>
-                <h5 class="fw-bold">Belum ada pesan masuk</h5>
-                <p class="text-muted">Kotak masuk pengaduan masih kosong.</p>
+            <div class="card-clean text-center py-5">
+                <div class="card-body">
+                    <div class="bg-light rounded-circle d-inline-flex p-4 mb-3">
+                        <i class="bi bi-inbox fs-1 text-muted"></i>
+                    </div>
+                    <h5 class="fw-bold text-dark">Belum ada pesan masuk</h5>
+                    <p class="text-muted mb-0">Tidak ada pengaduan untuk periode yang dipilih.</p>
+                </div>
             </div>
         <?php else: ?>
-            <?php foreach($data as $row): ?>
-            <div class="card-msg">
-                <div class="mb-2">
-                    <h6 class="fw-bold mb-1"><?= htmlspecialchars($row['nama']) ?></h6>
-                    <div class="text-muted small">
-                        <i class="bi bi-envelope-fill me-1"></i> <?= htmlspecialchars($row['kontak']) ?>
-                    </div>
-                    <div class="text-muted small mt-1">
-                        <i class="bi bi-clock me-1"></i> <?= date('d M Y, H:i', strtotime($row['created_at'])) ?>
-                    </div>
-                    <div class="mt-2 d-flex flex-wrap gap-2">
-                        <?php if (!empty($row['is_done'])): ?>
-                            <span class="badge bg-success">Sudah Dilakukan</span>
-                        <?php endif; ?>
-                        <?php if (!empty($row['is_important'])): ?>
-                            <span class="badge bg-warning text-dark">Penting</span>
-                        <?php endif; ?>
+            <div class="row g-4">
+                <?php foreach($data as $row): ?>
+                <div class="col-12">
+                    <div class="card-clean hover-card">
+                        <div class="card-body p-4">
+                            <div class="d-flex flex-column flex-md-row gap-4">
+                                <!-- User Info -->
+                                <div class="d-flex flex-column gap-1" style="min-width: 200px;">
+                                    <h6 class="fw-bold text-dark mb-1"><?= htmlspecialchars($row['nama']) ?></h6>
+                                    <div class="text-muted small d-flex align-items-center gap-2">
+                                        <i class="bi bi-envelope text-primary"></i> <?= htmlspecialchars($row['kontak']) ?>
+                                    </div>
+                                    <div class="text-muted small d-flex align-items-center gap-2">
+                                        <i class="bi bi-calendar3"></i> <?= date('d M Y, H:i', strtotime($row['created_at'])) ?>
+                                    </div>
+                                    <div class="mt-2 d-flex flex-wrap gap-1">
+                                        <?php if (!empty($row['is_done'])): ?>
+                                            <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill"><i class="bi bi-check-circle-fill me-1"></i>Selesai</span>
+                                        <?php endif; ?>
+                                        <?php if (!empty($row['is_important'])): ?>
+                                            <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle rounded-pill"><i class="bi bi-star-fill me-1"></i>Penting</span>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+
+                                <!-- Message Content -->
+                                <div class="flex-grow-1 border-start-md ps-md-4">
+                                    <div class="bg-light p-3 rounded-3 border mb-3">
+                                        <p class="m-0 text-dark" style="white-space: pre-line; line-height: 1.6;"><?= htmlspecialchars($row['pesan']) ?></p>
+                                    </div>
+                                    
+                                    <!-- Actions -->
+                                    <div class="d-flex flex-wrap gap-2">
+                                        <form method="POST">
+                                            <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
+                                            <input type="hidden" name="aksi" value="toggle_important">
+                                            <input type="hidden" name="id" value="<?= $row['id'] ?>">
+                                            <button class="btn btn-sm btn-outline-warning rounded-pill fw-bold px-3" type="submit">
+                                                <i class="bi bi-star<?= !empty($row['is_important']) ? '-fill' : '' ?> me-1"></i>
+                                                <?= !empty($row['is_important']) ? 'Lepas Penting' : 'Tandai Penting' ?>
+                                            </button>
+                                        </form>
+                                        <form method="POST">
+                                            <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
+                                            <input type="hidden" name="aksi" value="toggle_done">
+                                            <input type="hidden" name="id" value="<?= $row['id'] ?>">
+                                            <button class="btn btn-sm btn-outline-success rounded-pill fw-bold px-3" type="submit">
+                                                <i class="bi bi-check-lg me-1"></i>
+                                                <?= !empty($row['is_done']) ? 'Batal Selesai' : 'Tandai Selesai' ?>
+                                            </button>
+                                        </form>
+                                        <form method="POST" class="js-confirm ms-auto" data-confirm-title="Hapus pesan?" data-confirm-text="Pesan ini akan dihapus permanen dan tidak bisa dikembalikan." data-confirm-button="Ya, hapus">
+                                            <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
+                                            <input type="hidden" name="aksi" value="hapus">
+                                            <input type="hidden" name="id" value="<?= $row['id'] ?>">
+                                            <button class="btn btn-sm btn-white text-danger border hover-bg-light rounded-pill fw-bold px-3">
+                                                <i class="bi bi-trash me-1"></i>Hapus
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div class="bg-pesan mb-3">
-                    <p class="m-0 text-secondary" style="white-space: pre-line;"><?= htmlspecialchars($row['pesan']) ?></p>
-                </div>
-                <div class="d-flex flex-wrap gap-2">
-                    <form method="POST">
-                        <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
-                        <input type="hidden" name="aksi" value="toggle_important">
-                        <input type="hidden" name="id" value="<?= $row['id'] ?>">
-                        <button class="btn btn-sm btn-outline-warning fw-bold" type="submit">
-                            <?= !empty($row['is_important']) ? 'Batalkan Penting' : 'Tandai Penting' ?>
-                        </button>
-                    </form>
-                    <form method="POST">
-                        <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
-                        <input type="hidden" name="aksi" value="toggle_done">
-                        <input type="hidden" name="id" value="<?= $row['id'] ?>">
-                        <button class="btn btn-sm btn-outline-success fw-bold" type="submit">
-                            <?= !empty($row['is_done']) ? 'Batalkan Selesai' : 'Tandai Selesai' ?>
-                        </button>
-                    </form>
-                    <form method="POST" class="js-confirm" data-confirm-title="Hapus pesan?" data-confirm-text="Pesan ini akan dihapus permanen dan tidak bisa dikembalikan." data-confirm-button="Ya, hapus">
-                        <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
-                        <input type="hidden" name="aksi" value="hapus">
-                        <input type="hidden" name="id" value="<?= $row['id'] ?>">
-                        <button class="btn btn-sm btn-outline-danger fw-bold">
-                            Hapus Pesan
-                        </button>
-                    </form>
-                </div>
+                <?php endforeach; ?>
             </div>
-            <?php endforeach; ?>
         <?php endif; ?>
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         function bindConfirmForms(root = document) {
             root.querySelectorAll('form.js-confirm').forEach((form) => {
@@ -290,6 +356,8 @@ $total_aduan = count($data);
                             text,
                             icon: 'warning',
                             showCancelButton: true,
+                            confirmButtonColor: '#d33',
+                            cancelButtonColor: '#3085d6',
                             confirmButtonText: confirmButton,
                             cancelButtonText: 'Batal',
                             reverseButtons: true
@@ -307,14 +375,15 @@ $total_aduan = count($data);
             document.body.classList.toggle('sidebar-open', open);
         }
 
-        document.querySelectorAll('.sidebar .nav-link').forEach((link) => {
-            link.addEventListener('click', () => toggleSidebar(false));
-        });
-
         const chartCtx = document.getElementById('chartPengaduan');
         const chartData = <?= json_encode(array_values($grafik_counts)) ?>;
         const chartImportant = <?= json_encode(array_values($grafik_important)) ?>;
         const chartDone = <?= json_encode(array_values($grafik_done)) ?>;
+        
+        // Custom Font
+        Chart.defaults.font.family = "'Plus Jakarta Sans', sans-serif";
+        Chart.defaults.color = '#6c757d';
+
         new Chart(chartCtx, {
             type: 'bar',
             data: {
@@ -322,32 +391,57 @@ $total_aduan = count($data);
                 datasets: [{
                     label: 'Total Aduan',
                     data: chartData,
-                    backgroundColor: 'rgba(0,0,0,0.75)',
-                    borderRadius: 6
+                    backgroundColor: '#0F52BA',
+                    borderRadius: 4,
+                    barPercentage: 0.6
                 },
                 {
                     label: 'Penting',
                     data: chartImportant,
-                    backgroundColor: 'rgba(255, 193, 7, 0.85)',
-                    borderRadius: 6
+                    backgroundColor: '#F4C430',
+                    borderRadius: 4,
+                    barPercentage: 0.6
                 },
                 {
                     label: 'Selesai',
                     data: chartDone,
-                    backgroundColor: 'rgba(25, 135, 84, 0.85)',
-                    borderRadius: 6
+                    backgroundColor: '#198754',
+                    borderRadius: 4,
+                    barPercentage: 0.6
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                scales: {
-                    y: { beginAtZero: true, ticks: { stepSize: 1 } },
-                    x: { grid: { display: false } }
-                },
                 plugins: {
-                    legend: { display: true, position: 'bottom' }
-                }
+                    legend: { 
+                        position: 'bottom',
+                        labels: { usePointStyle: true, boxWidth: 8, padding: 20, font: { weight: 600 } }
+                    },
+                    tooltip: {
+                        backgroundColor: '#1e1e2d',
+                        titleFont: { size: 13 },
+                        bodyFont: { size: 13 },
+                        padding: 10,
+                        cornerRadius: 8,
+                        displayColors: true
+                    }
+                },
+                scales: {
+                    y: { 
+                        beginAtZero: true, 
+                        grid: { color: '#f1f1f1', drawBorder: false },
+                        ticks: { stepSize: 1, font: { size: 11 } }
+                    },
+                    x: { 
+                        grid: { display: false },
+                        ticks: { font: { size: 11 } }
+                    }
+                },
+                interaction: {
+                    intersect: false,
+                    mode: 'index',
+                },
             }
         });
 

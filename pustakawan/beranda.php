@@ -75,13 +75,17 @@ $library = $stmt->fetch();
         .header-text p {
             margin: 0;
             font-size: 16px;
-            color: #333;
+            color: #1e293b;
+            /* Darker for better readability */
+            font-weight: 500;
         }
 
         .logo-img {
             height: 80px;
             width: auto;
             object-fit: contain;
+            /* Prevent distortion */
+            flex-shrink: 0;
         }
 
         /* 2. TITLE BOX */
@@ -91,54 +95,66 @@ $library = $stmt->fetch();
             max-width: 900px;
             padding: 20px 40px;
             text-align: center;
-            border: 1px solid #ddd; /* Border tipis */
-            box-shadow: 0px 4px 10px rgba(0,0,0,0.15); /* Efek bayangan */
-            border-radius: 8px; /* Sudut sedikit melengkung */
+            border: 1px solid #ddd;
+            box-shadow: 0px 4px 10px rgba(0,0,0,0.15);
+            border-radius: 8px;
             margin-bottom: 30px;
         }
 
         .title-box h4 {
             font-size: 20px;
-            line-height: 1.5;
+            line-height: 1.6;
+            /* Better line spacing */
             margin: 0;
-            font-weight: 500;
+            font-weight: 600;
+            /* Bolder for better readability */
+            color: #0f172a;
+            /* Darker text */
         }
 
         /* 3. INSTRUCTION TEXT */
         .instruction-text {
             font-size: 18px;
             margin-bottom: 30px;
-            color: #333;
+            color: #1e293b;
+            /* Darker for better readability */
+            font-weight: 600;
         }
 
         /* 4. SELECTION CARDS (BUTTONS) */
         .card-menu {
             background: #fff;
-            border: 1px solid #000;
+            border: 2px solid #0f172a;
+            /* Thicker border for better visibility */
             border-radius: 15px;
             padding: 40px 20px;
             text-align: center;
-            height: 250px; /* Tinggi tetap agar seragam */
+            height: 250px;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: transform 0.2s, box-shadow 0.2s;
+            transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
             text-decoration: none;
-            color: #000;
+            color: #0f172a;
             box-shadow: 0px 4px 6px rgba(0,0,0,0.1);
         }
 
         .card-menu:hover {
-            transform: translateY(-5px); /* Efek naik saat di-hover */
+            transform: translateY(-5px);
             box-shadow: 0px 8px 15px rgba(0,0,0,0.2);
-            border-color: #000;
-            color: #000;
+            border-color: #0F52BA;
+            /* Primary color on hover */
+            color: #0F52BA;
+            background: #eff6ff;
+            /* Light blue background on hover */
         }
 
         .card-menu h3 {
             font-size: 22px;
-            font-weight: 500;
-            line-height: 1.4;
+            font-weight: 600;
+            /* Bolder for better readability */
+            line-height: 1.5;
+            /* Better line spacing */
         }
 
         /* 5. FOOTER INFO */
@@ -163,14 +179,14 @@ $library = $stmt->fetch();
     <?php include __DIR__ . '/../config/loader.php'; ?>
 
     <div class="header-box">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/0/0c/Lambang_Kabupaten_Lombok_Barat.png" alt="Logo Lobar" class="logo-img">
+        <img src="../assets/logo_lobar.png" alt="Logo Lobar" class="logo-img">
         
         <div class="header-text">
             <h2>Dinas Kearsipan dan Perpustakaan</h2>
             <p>Kabupaten Lombok Barat</p>
         </div>
 
-        <img src="https://cdn-icons-png.flaticon.com/512/3389/3389081.png" alt="Logo Disarpus" class="logo-img">
+        <img src="../assets/logo_disarpus.png" alt="Logo Disarpus" class="logo-img">
     </div>
 
     <div class="title-box">

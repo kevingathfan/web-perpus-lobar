@@ -83,8 +83,8 @@ $sql = "SELECT h.id as header_id, h.periode_bulan, h.periode_tahun,
         FROM trans_header h
         LEFT JOIN libraries l ON h.library_id = l.id
         WHERE h.jenis_kuesioner = :jenis
-        AND (CAST(CONCAT(h.periode_tahun, h.periode_bulan) AS INTEGER) >= :start_p)
-        AND (CAST(CONCAT(h.periode_tahun, h.periode_bulan) AS INTEGER) <= :end_p)
+        AND (CAST(CONCAT(h.periode_tahun, h.periode_bulan) AS UNSIGNED) >= :start_p)
+        AND (CAST(CONCAT(h.periode_tahun, h.periode_bulan) AS UNSIGNED) <= :end_p)
         ORDER BY h.id ASC";
 $stmtData = $pdo->prepare($sql);
 $stmtData->execute([
@@ -123,135 +123,180 @@ $periode_label = ($start_key === $end_key)
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hasil Kuisioner - Admin</title>
+    <title>Hasil Kuisioner - DISARPUS</title>
+    <!-- Dependencies -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    
+    <!-- GovTech Theme -->
+    <link rel="stylesheet" href="../assets/govtech.css">
+    <link rel="stylesheet" href="../assets/admin-readability.css">
     <link rel="stylesheet" href="../assets/loader.css">
-    <link rel="stylesheet" href="../assets/admin-responsive.css">
     <style>
-        body { font-family: 'Poppins', sans-serif; background-color: #f8f9fa; overflow-x: hidden; }
-        .sidebar { min-height: 100vh; width: 260px; background-color: #ffffff; border-right: 1px solid #e0e0e0; position: fixed; top: 0; left: 0; padding: 40px 20px; z-index: 100; }
-        .sidebar-header { margin-bottom: 28px; display: flex; align-items: flex-start; justify-content: space-between; }
-        .sidebar-brand { display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; flex: 1; }
-        .sidebar-title { font-weight: 800; font-size: 22px; color: #000; letter-spacing: 2px; line-height: 1.2; }
-        .sidebar-logo { width: 64px; height: 64px; object-fit: contain; }
-        .nav-link { color: #666; font-weight: 600; font-size: 15px; padding: 12px 20px; margin-bottom: 8px; border-radius: 8px; transition: all 0.3s; display: flex; align-items: center; gap: 10px; }
-        .nav-link:hover, .nav-link.active { background-color: #000; color: #fff; }
-        .main-content { margin-left: 260px; padding: 40px 50px; }
-        .card-clean { background-color: #ffffff; border: 1px solid #e0e0e0; border-radius: 16px; padding: 25px; box-shadow: 0 5px 20px rgba(0,0,0,0.03); }
-        .table thead th { white-space: nowrap; }
-        .table td { vertical-align: middle; }
-        .table-responsive { max-height: 70vh; overflow: auto; }
-        .table-sm td, .table-sm th { font-size: 12px; }
-        .cell-wrap { white-space: normal; word-break: break-word; min-width: 180px; max-width: 260px; }
+        .table thead th { font-weight: 700; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; background-color: #f8f9fa; border-bottom: 2px solid #e9ecef; }
+        .table td { vertical-align: middle; font-size: 0.9rem; }
+        .table-responsive { max-height: 70vh; overflow: auto; border-radius: 8px; border: 1px solid #e9ecef; }
+        .cell-wrap { white-space: normal; word-break: break-word; min-width: 180px; max-width: 260px; overflow: hidden; }
         .cell-wide { min-width: 220px; }
         .sticky-head th { position: sticky; top: 0; z-index: 7; background: #f8f9fa; }
-        .sticky-col { position: sticky; z-index: 6; background: #fff; }
-        .sticky-col-name { left: 0; min-width: 240px; max-width: 320px; box-shadow: 8px 0 8px -8px rgba(0,0,0,0.2); }
-        .sticky-right { position: sticky; right: 0; z-index: 8; background: #fff; box-shadow: -8px 0 8px -8px rgba(0,0,0,0.2); }
-        .pill { display: inline-block; padding: 4px 10px; border-radius: 999px; font-size: 12px; background: #f1f3f5; color: #555; }
+        .sticky-col-name { min-width: 240px; max-width: 320px; }
+        .sticky-right { min-width: 70px; text-align: center; white-space: nowrap; }
+        
+        /* Prevent text truncation in form selects */
+        .card-clean .form-select { 
+            text-overflow: unset; 
+            overflow: visible;
+            white-space: nowrap;
+            font-size: 0.9rem;
+        }
+        .card-clean .form-label {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
     </style>
 </head>
 <body>
     <?php include __DIR__ . '/../config/loader.php'; ?>
-    <div class="sidebar-backdrop" onclick="toggleSidebar(false)"></div>
+    <div class="bg-govtech"></div>
+    
+    <div class="sidebar-backdrop" onclick="document.body.classList.remove('sidebar-open')"></div>
 
+    <!-- Sidebar -->
     <nav class="sidebar">
         <div class="sidebar-header">
             <div class="sidebar-brand">
-                <span class="sidebar-title">DISARPUS</span>
-                <img src="../assets/logo_disarpus.png" alt="Logo Disarpus" class="sidebar-logo">
+                <h6 class="mb-0 fw-bold">ADMIN PANEL</h6>
             </div>
-            <button class="btn btn-sm btn-outline-dark d-lg-none" onclick="toggleSidebar(false)"><i class="bi bi-x-lg"></i></button>
+            <button class="btn btn-sm btn-light d-lg-none" onclick="document.body.classList.remove('sidebar-open')">
+                <i class="bi bi-x-lg"></i>
+            </button>
         </div>
-        <div class="nav flex-column">
-            <a href="dashboard.php" class="nav-link"><i class="bi bi-grid-fill"></i> DASHBOARD</a>
-            <a href="perpustakaan.php" class="nav-link"><i class="bi bi-building"></i> PERPUSTAKAAN</a>
-            <a href="hasil_kuisioner.php" class="nav-link active"><i class="bi bi-table"></i> HASIL KUISIONER</a>
-            <a href="atur_pertanyaan.php" class="nav-link"><i class="bi bi-file-text"></i> KUISIONER</a>
-            <a href="pengaduan.php" class="nav-link"><i class="bi bi-chat-left-text"></i> PENGADUAN</a>
-            <a href="users.php" class="nav-link"><i class="bi bi-people-fill"></i> ADMIN</a>
-            <div class="mt-5 pt-5 border-top">
-                <a href="logout.php" class="nav-link text-danger"><i class="bi bi-box-arrow-left"></i> KELUAR</a>
-            </div>
+        
+        <div class="nav flex-column gap-1">
+            <div class="sidebar-label">Utama</div>
+            <a href="dashboard.php" class="nav-link">
+                <i class="bi bi-grid-fill"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="perpustakaan.php" class="nav-link">
+                <i class="bi bi-building"></i>
+                <span>Perpustakaan</span>
+            </a>
+            
+            <div class="sidebar-label mt-3">Pelaporan</div>
+            <a href="hasil_kuisioner.php" class="nav-link active">
+                <i class="bi bi-file-earmark-bar-graph"></i>
+                <span>Hasil Kuesioner</span>
+            </a>
+            <a href="atur_pertanyaan.php" class="nav-link">
+                <i class="bi bi-gear-wide-connected"></i>
+                <span>Atur Pertanyaan</span>
+            </a>
+            <a href="pengaduan.php" class="nav-link">
+                <i class="bi bi-chat-left-text-fill"></i>
+                <span>Pengaduan</span>
+            </a>
+
+            <div class="sidebar-label mt-3">Sistem</div>
+            <a href="users.php" class="nav-link">
+                <i class="bi bi-people-fill"></i>
+                <span>Admin Users</span>
+            </a>
+            <a href="logout.php" class="nav-link text-danger mt-3">
+                <i class="bi bi-box-arrow-right"></i>
+                <span>Keluar</span>
+            </a>
         </div>
     </nav>
 
     <main class="main-content">
         <div class="d-flex justify-content-between align-items-center mb-4 page-header">
             <div class="d-flex align-items-center gap-2">
-                <button class="btn btn-dark btn-sm d-lg-none" onclick="toggleSidebar(true)"><i class="bi bi-list"></i></button>
+                <button class="btn btn-dark btn-sm d-lg-none" onclick="document.body.classList.add('sidebar-open')"><i class="bi bi-list"></i></button>
                 <div>
                     <h1 class="h2 fw-bold m-0 page-title">Hasil Kuisioner</h1>
-                    <p class="text-muted m-0 page-subtitle">Tabel hasil IPLM & TKM berdasarkan rentang periode.</p>
+                    <p class="text-muted m-0 page-subtitle">Pantau dan kelola data responden IPLM & TKM</p>
                 </div>
             </div>
-            <div class="pill">Periode: <?= $periode_label ?></div>
+            <div class="bg-white px-3 py-2 rounded-pill shadow-sm border">
+                <small class="text-muted fw-bold text-uppercase me-2">Periode</small>
+                <span class="fw-bold text-royal"><?= $periode_label ?></span>
+            </div>
         </div>
 
-        <div class="card-clean mb-4">
-            <form method="POST" class="row g-3 align-items-end">
+        <div class="card-clean p-4 mb-4">
+            <!-- Filter Row -->
+            <form method="POST">
                 <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
-                <div class="col-lg-3">
-                    <label class="form-label fw-bold">Jenis Kuisioner</label>
-                    <select name="jenis" class="form-select">
-                        <option value="iplm" <?= $jenis === 'iplm' ? 'selected' : '' ?>>IPLM</option>
-                        <option value="tkm" <?= $jenis === 'tkm' ? 'selected' : '' ?>>TKM</option>
-                    </select>
-                </div>
-                <div class="col-lg-3">
-                    <label class="form-label fw-bold">Mulai</label>
-                    <div class="row g-2">
-                        <div class="col-7">
-                            <select name="start_bulan" class="form-select">
-                                <?php foreach($list_bulan as $k => $v): ?>
-                                    <option value="<?= $k ?>" <?= ($k == $start_bln) ? 'selected' : '' ?>><?= $v ?></option>
-                                <?php endforeach; ?>
+                <div class="row g-3 align-items-end">
+                    <div class="col-12 col-sm-6 col-lg-2">
+                        <label class="form-label fw-bold small text-uppercase text-muted mb-1">Jenis</label>
+                        <select name="jenis" class="form-select">
+                            <option value="iplm" <?= $jenis === 'iplm' ? 'selected' : '' ?>>IPLM (Literasi)</option>
+                            <option value="tkm" <?= $jenis === 'tkm' ? 'selected' : '' ?>>TKM (Membaca)</option>
+                        </select>
+                    </div>
+                    <div class="col-12 col-sm-6 col-lg-3">
+                        <label class="form-label fw-bold small text-uppercase text-muted mb-1">Dari</label>
+                        <div class="d-flex gap-2">
+                            <select name="start_bulan" class="form-select" style="min-width: 130px;">
+                                <?php foreach($list_bulan as $k => $v): ?><option value="<?= $k ?>" <?= ($k == $start_bln) ? 'selected' : '' ?>><?= $v ?></option><?php endforeach; ?>
                             </select>
-                        </div>
-                        <div class="col-5">
-                            <select name="start_tahun" class="form-select">
-                                <?php for($t = date('Y'); $t >= date('Y')-2; $t--): ?>
-                                    <option value="<?= $t ?>" <?= ($t == $start_thn) ? 'selected' : '' ?>><?= $t ?></option>
-                                <?php endfor; ?>
+                            <select name="start_tahun" class="form-select" style="min-width: 90px; max-width: 100px;">
+                                <?php for($t = date('Y'); $t >= date('Y')-2; $t--): ?><option value="<?= $t ?>" <?= ($t == $start_thn) ? 'selected' : '' ?>><?= $t ?></option><?php endfor; ?>
                             </select>
                         </div>
                     </div>
-                </div>
-                <div class="col-lg-3">
-                    <label class="form-label fw-bold">Sampai</label>
-                    <div class="row g-2">
-                        <div class="col-7">
-                            <select name="end_bulan" class="form-select">
-                                <?php foreach($list_bulan as $k => $v): ?>
-                                    <option value="<?= $k ?>" <?= ($k == $end_bln) ? 'selected' : '' ?>><?= $v ?></option>
-                                <?php endforeach; ?>
+                    <div class="col-12 col-sm-6 col-lg-3">
+                        <label class="form-label fw-bold small text-uppercase text-muted mb-1">Sampai</label>
+                        <div class="d-flex gap-2">
+                            <select name="end_bulan" class="form-select" style="min-width: 130px;">
+                                <?php foreach($list_bulan as $k => $v): ?><option value="<?= $k ?>" <?= ($k == $end_bln) ? 'selected' : '' ?>><?= $v ?></option><?php endforeach; ?>
                             </select>
-                        </div>
-                        <div class="col-5">
-                            <select name="end_tahun" class="form-select">
-                                <?php for($t = date('Y'); $t >= date('Y')-2; $t--): ?>
-                                    <option value="<?= $t ?>" <?= ($t == $end_thn) ? 'selected' : '' ?>><?= $t ?></option>
-                                <?php endfor; ?>
+                            <select name="end_tahun" class="form-select" style="min-width: 90px; max-width: 100px;">
+                                <?php for($t = date('Y'); $t >= date('Y')-2; $t--): ?><option value="<?= $t ?>" <?= ($t == $end_thn) ? 'selected' : '' ?>><?= $t ?></option><?php endfor; ?>
                             </select>
                         </div>
                     </div>
-                </div>
-                <div class="col-lg-3 d-grid">
-                    <button type="submit" class="btn btn-dark fw-bold">Terapkan Filter</button>
+                    <div class="col-12 col-sm-6 col-lg-2">
+                        <button type="submit" class="btn btn-primary w-100 fw-bold">
+                            <i class="bi bi-funnel-fill me-1"></i> Filter
+                        </button>
+                    </div>
+                    <div class="col-12 col-sm-12 col-lg-2">
+                        <div class="d-flex flex-column gap-2">
+                            <?php if ($jenis === 'iplm'): ?>
+                            <!-- This hidden form submits to export_data.php -->
+                            <?php endif; ?>
+                        </div>
+                    </div>
                 </div>
             </form>
-            <div class="d-flex justify-content-end mt-3">
-                <form method="POST" action="export_data.php" target="_blank">
+            
+            <!-- Export Row -->
+            <div class="border-top mt-3 pt-3">
+                <form method="POST" action="export_data.php" target="_blank" class="d-flex flex-wrap align-items-center gap-3">
                     <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
                     <input type="hidden" name="jenis" value="<?= htmlspecialchars($jenis) ?>">
                     <input type="hidden" name="start_bulan" value="<?= htmlspecialchars($start_bln) ?>">
                     <input type="hidden" name="start_tahun" value="<?= htmlspecialchars($start_thn) ?>">
                     <input type="hidden" name="end_bulan" value="<?= htmlspecialchars($end_bln) ?>">
                     <input type="hidden" name="end_tahun" value="<?= htmlspecialchars($end_thn) ?>">
-                    <button type="submit" class="btn btn-success fw-bold rounded-pill px-4">
-                        <i class="bi bi-file-earmark-spreadsheet-fill me-1"></i> Export Excel
+                    
+                    <span class="fw-bold small text-uppercase text-muted"><i class="bi bi-download me-1"></i> Export</span>
+                    
+                    <?php if ($jenis === 'iplm'): ?>
+                    <select name="status_filter" class="form-select form-select-sm" style="width: auto; min-width: 160px;">
+                        <option value="filled" selected>Data Mengisi</option>
+                        <option value="unfilled">Belum Mengisi</option>
+                        <option value="all">Semua Data</option>
+                    </select>
+                    <?php endif; ?>
+
+                    <button type="submit" class="btn btn-success btn-sm fw-bold px-4">
+                        <i class="bi bi-file-earmark-excel-fill me-1"></i> Export Excel
                     </button>
                 </form>
             </div>
@@ -265,7 +310,7 @@ $periode_label = ($start_key === $end_key)
                             <th>No</th>
                             <th>Periode</th>
                             <?php if ($jenis === 'iplm'): ?>
-                                <th class="sticky-col sticky-col-name cell-wide">Nama Perpustakaan</th>
+                                <th class="sticky-col-name cell-wide">Nama Perpustakaan</th>
                                 <th>Kategori</th>
                                 <th>Jenis</th>
                             <?php endif; ?>
@@ -288,7 +333,7 @@ $periode_label = ($start_key === $end_key)
                                     <td><?= $no++ ?></td>
                                     <td><?= htmlspecialchars($row['periode_bulan'] . '/' . $row['periode_tahun']) ?></td>
                                     <?php if ($jenis === 'iplm'): ?>
-                                        <td class="sticky-col sticky-col-name cell-wide"><?= htmlspecialchars($row['nama_perpus'] ?? '-') ?></td>
+                                        <td class="sticky-col-name cell-wide"><?= htmlspecialchars($row['nama_perpus'] ?? '-') ?></td>
                                         <td><?= htmlspecialchars($row['kategori'] ?? '-') ?></td>
                                         <td><?= htmlspecialchars($row['jenis_perpus'] ?? '-') ?></td>
                                     <?php endif; ?>
@@ -358,6 +403,21 @@ $periode_label = ($start_key === $end_key)
         });
 
         bindConfirmForms();
+
+        // Persist Export Status Filter selection
+        const statusSelect = document.querySelector('select[name="status_filter"]');
+        if (statusSelect) {
+            // Load saved value
+            const saved = localStorage.getItem('export_status_filter');
+            if (saved) {
+                statusSelect.value = saved;
+            }
+            
+            // Save on change
+            statusSelect.addEventListener('change', function() {
+                localStorage.setItem('export_status_filter', this.value);
+            });
+        }
     </script>
     <script src="../assets/loader.js"></script>
 </body>

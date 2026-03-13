@@ -81,14 +81,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     SELECT id FROM master_pertanyaan 
                     WHERE jenis_kuesioner = 'IPLM' 
                     AND (
-                        teks_pertanyaan ILIKE '%kontak pengisi kuesioner%' OR
-                        teks_pertanyaan ILIKE '%whatsapp aktif%' OR
-                        teks_pertanyaan ILIKE '%kontak%' OR
-                        teks_pertanyaan ILIKE '%no hp%' OR
-                        teks_pertanyaan ILIKE '%no. hp%' OR
-                        teks_pertanyaan ILIKE '%telepon%' OR
-                        teks_pertanyaan ILIKE '%whatsapp%' OR
-                        teks_pertanyaan ILIKE '%email%'
+                        LOWER(teks_pertanyaan) LIKE '%kontak pengisi kuesioner%' OR
+                        LOWER(teks_pertanyaan) LIKE '%whatsapp aktif%' OR
+                        LOWER(teks_pertanyaan) LIKE '%kontak%' OR
+                        LOWER(teks_pertanyaan) LIKE '%no hp%' OR
+                        LOWER(teks_pertanyaan) LIKE '%no. hp%' OR
+                        LOWER(teks_pertanyaan) LIKE '%telepon%' OR
+                        LOWER(teks_pertanyaan) LIKE '%whatsapp%' OR
+                        LOWER(teks_pertanyaan) LIKE '%email%'
                     )
                 ");
                 $stmtKontakId->execute();
@@ -125,9 +125,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         WHERE h.jenis_kuesioner = 'IPLM'
                           AND h.periode_bulan = ?
                           AND h.periode_tahun = ?
-                          AND h.library_id IS DISTINCT FROM ?
+                          AND NOT (h.library_id <=> ?)
                           AND d.pertanyaan_id IN ($placeholders)
-                          AND regexp_replace(d.jawaban, '[^0-9]', '', 'g') = ?
+                          AND REGEXP_REPLACE(d.jawaban, '[^0-9]', '') = ?
                         LIMIT 1
                     ";
                     $params = array_merge([$periode_bulan, $periode_tahun, $library_id], $kontak_ids, [$kontak_norm]);
@@ -139,7 +139,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         WHERE h.jenis_kuesioner = 'IPLM'
                           AND h.periode_bulan = ?
                           AND h.periode_tahun = ?
-                          AND h.library_id IS DISTINCT FROM ?
+                          AND NOT (h.library_id <=> ?)
                           AND d.pertanyaan_id IN ($placeholders)
                           AND LOWER(TRIM(d.jawaban)) = ?
                         LIMIT 1
@@ -161,12 +161,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $pdo->beginTransaction();
 
         // 1. Simpan Header
-        $stmtHeader = $pdo->prepare("INSERT INTO trans_header (library_id, jenis_kuesioner, periode_bulan, periode_tahun) VALUES (?, ?, ?, ?) RETURNING id");
+        $stmtHeader = $pdo->prepare("INSERT INTO trans_header (library_id, jenis_kuesioner, periode_bulan, periode_tahun) VALUES (?, ?, ?, ?)");
         
         // Eksekusi dengan $library_id yang sudah divalidasi (bisa angka atau NULL)
         $stmtHeader->execute([$library_id, $jenis, $periode_bulan, $periode_tahun]);
         
-        $header_id = $stmtHeader->fetchColumn(); 
+        $header_id = $pdo->lastInsertId();
 
         // 2. Simpan Detail
         $stmtDetail = $pdo->prepare("INSERT INTO trans_detail (header_id, pertanyaan_id, jawaban) VALUES (?, ?, ?)");

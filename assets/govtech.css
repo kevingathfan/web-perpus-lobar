@@ -1,0 +1,471 @@
+/* assets/govtech.css */
+/* Royal GovTech Design System via Google DeepMind Agent */
+
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+
+:root {
+    /* Color Palette */
+    --primary: #0F52BA;
+    /* Sapphire Blue */
+    --primary-dark: #0a3d8f;
+    /* Deep Royal */
+    --primary-light: #eff6ff;
+    --accent: #F4C430;
+    /* Saffron/Gold */
+    --success: #198754;
+    --danger: #dc3545;
+
+    /* Backgrounds */
+    --bg-body: #f8fafc;
+    /* Cool Gray 50 */
+    --bg-surface: #ffffff;
+    --bg-soft: #f1f5f9;
+
+    /* Text */
+    --text-main: #0f172a;
+    /* Slate 900 */
+    --text-muted: #64748b;
+    /* Slate 500 */
+    --border: #e2e8f0;
+    /* Slate 200 */
+
+    /* Shadows */
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    --shadow-hover: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+body {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    background-color: var(--bg-body);
+    color: var(--text-main);
+    overflow-x: hidden;
+}
+
+/* --- Sidebar --- */
+.sidebar {
+    min-height: 100vh;
+    width: 260px;
+    background-color: var(--bg-surface);
+    border-right: 1px solid var(--border);
+    position: fixed;
+    top: 0;
+    left: 0;
+    padding: 30px 20px;
+    z-index: 1000;
+    transition: transform 0.3s ease;
+}
+
+.sidebar-header {
+    margin-bottom: 30px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 10px;
+}
+
+.sidebar-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--text-main);
+    font-weight: 800;
+    font-size: 1.1rem;
+    line-height: 1.2;
+    letter-spacing: -0.5px;
+}
+
+.sidebar-brand h6 {
+    font-size: 1.1rem !important;
+    font-weight: 700 !important;
+    margin-bottom: 0 !important;
+    line-height: 1.2 !important;
+    color: var(--text-main) !important;
+}
+
+.sidebar-brand small {
+    font-size: 0.75rem !important;
+    font-weight: 400 !important;
+    color: var(--text-muted) !important;
+    line-height: 1.3 !important;
+}
+
+.sidebar-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+    font-weight: 700;
+    margin: 20px 0 10px;
+    padding: 0 12px;
+}
+
+.sidebar .nav-link {
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 0.9rem;
+    padding: 12px 16px;
+    margin-bottom: 4px;
+    border-radius: 10px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.sidebar .nav-link:hover {
+    background-color: var(--bg-soft);
+    color: var(--primary);
+    transform: translateX(3px);
+}
+
+.sidebar .nav-link.active {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    color: white;
+    box-shadow: var(--shadow-md);
+}
+
+.sidebar .nav-link.active i {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.sidebar .nav-link i {
+    font-size: 1.1rem;
+    transition: 0.2s;
+    /* Fix icon aspect ratio - prevent distortion */
+    width: 1.1rem;
+    height: 1.1rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+/* Fix for all Bootstrap Icons to prevent distortion */
+.bi {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    vertical-align: middle;
+    line-height: 1;
+}
+
+/* Ensure icons maintain aspect ratio */
+.bi::before {
+    display: block;
+    width: 1em;
+    height: 1em;
+}
+
+/* --- Main Content --- */
+.main-content {
+    margin-left: 260px;
+    padding: 40px;
+    transition: margin-left 0.3s ease;
+}
+
+.page-header {
+    margin-bottom: 30px;
+}
+
+.page-title {
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    color: var(--text-main);
+}
+
+.page-subtitle {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+}
+
+/* --- Cards --- */
+.card-clean {
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.3s ease;
+    overflow: hidden;
+}
+
+.card-clean:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-hover);
+    border-color: rgba(15, 82, 186, 0.1);
+}
+
+.card-header-clean {
+    background: transparent;
+    border-bottom: 1px solid var(--border);
+    padding: 20px 25px;
+    font-weight: 700;
+}
+
+/* --- Forms & Inputs --- */
+.form-control,
+.form-select {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 15px;
+    font-size: 0.95rem;
+    transition: all 0.2s;
+}
+
+.form-control:focus,
+.form-select:focus,
+.form-check-input:focus,
+.btn:focus {
+    border-color: var(--border) !important;
+    box-shadow: none !important;
+    outline: none !important;
+}
+
+/* Specifically for buttons to ensure no outline even if active */
+.btn:active:focus,
+.btn.active:focus {
+    box-shadow: none !important;
+}
+
+/* --- Buttons --- */
+.btn-primary {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    border: none;
+    box-shadow: var(--shadow-md);
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
+    transform: translateY(-1px);
+}
+
+.btn-white {
+    background: white;
+    border: 1px solid var(--border);
+    color: var(--text-main);
+}
+
+.btn-white:hover {
+    background: var(--bg-soft);
+}
+
+/* --- Typography --- */
+.text-royal {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    font-weight: 800;
+}
+
+.fw-bold {
+    font-weight: 700 !important;
+}
+
+.fw-extrabold {
+    font-weight: 800 !important;
+}
+
+/* --- Tables --- */
+.table-govtech thead th {
+    background-color: var(--bg-soft);
+    color: var(--text-muted);
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.5px;
+    padding: 15px;
+    border-bottom: 2px solid var(--border);
+}
+
+.table-govtech tbody td {
+    padding: 15px;
+    vertical-align: middle;
+    color: #1e293b;
+    /* Darker for better readability */
+    border-bottom: 1px solid var(--border);
+    font-size: 0.9rem;
+}
+
+.table-govtech tr:hover td {
+    background-color: var(--primary-light);
+}
+
+/* --- Utilities --- */
+.bg-govtech {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 300px;
+    background: linear-gradient(180deg, #eff6ff 0%, rgba(255, 255, 255, 0) 100%);
+    z-index: -1;
+}
+
+.hover-scale {
+    transition: transform 0.2s;
+}
+
+.hover-scale:hover {
+    transform: scale(1.02);
+}
+
+/* --- Responsive --- */
+@media (max-width: 991.98px) {
+    .sidebar {
+        transform: translateX(-100%);
+    }
+
+    .main-content {
+        margin-left: 0;
+    }
+
+    .sidebar-open .sidebar {
+        transform: translateX(0);
+        box-shadow: 0 0 50px rgba(0, 0, 0, 0.2);
+    }
+
+    .sidebar-backdrop {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 900;
+        opacity: 0;
+        visibility: hidden;
+        transition: 0.3s;
+        backdrop-filter: blur(2px);
+    }
+
+    .sidebar-open .sidebar-backdrop {
+        opacity: 1;
+        visibility: visible;
+    }
+}
+
+/* --- Stat Cards --- */
+.stat-card-modern {
+    background: #fff;
+    border-radius: 16px;
+    padding: 24px;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-sm);
+    transition: all 0.3s ease;
+}
+
+.stat-card-modern:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-lg);
+}
+
+.stat-icon-wrapper {
+    width: 50px;
+    height: 50px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+
+.stat-icon-wrapper i {
+    /* Prevent icon distortion */
+    width: 1.5rem;
+    height: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.status-badge {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 6px 12px;
+    border-radius: 30px;
+}
+
+/* === LOGO FIXES === */
+.logo-img {
+    height: 60px;
+    width: auto;
+    object-fit: contain;
+    max-width: 100%;
+}
+
+/* Consistent logo sizing across pages */
+img[alt*="Logo"],
+img[alt*="logo"] {
+    object-fit: contain;
+    max-width: 100%;
+    height: auto;
+}
+
+/* === TEXT READABILITY IMPROVEMENTS === */
+.text-muted {
+    color: #64748b !important;
+}
+
+small,
+.small {
+    font-size: 0.875rem;
+    line-height: 1.5;
+}
+
+.form-label {
+    color: var(--text-main);
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.btn {
+    font-weight: 600;
+    letter-spacing: 0.3px;
+}
+
+.card-clean p,
+.stat-card-modern p {
+    color: #475569;
+    line-height: 1.6;
+}
+
+/* === ICON CONSISTENCY === */
+i[class*="bi-"] {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.btn i {
+    margin-right: 0.5rem;
+    flex-shrink: 0;
+}
+
+.btn i:last-child {
+    margin-right: 0;
+    margin-left: 0.5rem;
+}
+
+.badge {
+    font-weight: 600;
+    padding: 0.35em 0.65em;
+    line-height: 1.4;
+}
+
+/* === RESPONSIVE IMAGE FIXES === */
+@media (max-width: 768px) {
+    .logo-img {
+        height: 48px;
+    }
+
+    img[alt*="Logo"],
+    img[alt*="logo"] {
+        max-height: 48px;
+    }
+}

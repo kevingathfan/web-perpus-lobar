@@ -31,35 +31,110 @@ foreach ($rawKategori as $row) {
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <title>Pilih Identitas Perpustakaan</title>
+  <title>Pilih Identitas Perpustakaan - Royal GovTech</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
   <link rel="stylesheet" href="../assets/loader.css">
   <link rel="stylesheet" href="../assets/public-responsive.css">
-  <style> body { background-color: #f8f9fa; font-family: 'Poppins', sans-serif; display: flex; align-items: center; min-height: 100vh; } .card { border-radius: 15px; border: 1px solid #ddd; box-shadow: 0 4px 6px rgba(0,0,0,0.05); } 
+  <style>
+    :root {
+        --primary: #0F52BA;
+        --primary-dark: #0a3d8f;
+        --border: #e2e8f0;
+        --text-main: #0f172a;
+        --text-muted: #64748b;
+    }
+    body { 
+        background-color: #f8fafc; 
+        font-family: 'Plus Jakarta Sans', sans-serif; 
+        display: flex; 
+        align-items: center; 
+        min-height: 100vh; 
+        position: relative; 
+        overflow-x: hidden; 
+        margin: 0;
+    }
+    
+    .bg-pattern {
+        position: fixed;
+        top: 0; left: 0; width: 100%; height: 100%;
+        z-index: -1;
+        background-image: 
+            radial-gradient(circle at 10% 20%, rgba(15, 82, 186, 0.04) 0%, transparent 40%),
+            radial-gradient(circle at 90% 80%, rgba(244, 196, 48, 0.04) 0%, transparent 40%),
+            linear-gradient(#e2e8f0 1px, transparent 1px),
+            linear-gradient(90deg, #e2e8f0 1px, transparent 1px);
+        background-size: 100% 100%, 100% 100%, 40px 40px, 40px 40px;
+        background-position: 0 0, 0 0, 0 0, 0 0;
+        mask-image: radial-gradient(circle at center, black 40%, transparent 100%);
+    }
+
+    .main-card {
+        border-radius: 24px;
+        border: 1px solid var(--border);
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.02);
+        background: rgba(255, 255, 255, 0.9);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        transition: transform 0.3s ease;
+    }
+
+    .brand-logo { height: 40px !important; width: auto !important; }
+    .page-title { font-weight: 800; letter-spacing: -1px; color: var(--text-main); }
+    
+    .form-label { font-weight: 700; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); }
+    
+    .btn-primary-gov {
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+        border: none;
+        padding: 14px;
+        border-radius: 50px;
+        font-weight: 700;
+        color: white;
+        box-shadow: 0 4px 12px rgba(15, 82, 186, 0.25);
+        transition: all 0.3s ease;
+    }
+    .btn-primary-gov:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(15, 82, 186, 0.35);
+    }
+    .btn-primary-gov:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    .select2-container--bootstrap-5 .select2-selection {
+        border-radius: 12px;
+        padding: 6px 12px;
+        border-color: var(--border);
+    }
   </style>
 </head>
 <body>
   <?php include __DIR__ . '/../config/loader.php'; ?>
+  <div class="bg-pattern"></div>
 
-<div class="container">
+<div class="container py-5">
   <div class="row justify-content-center">
-    <div class="col-md-6">
-      <div class="card p-4">
-        <div class="card-body">
-          <h4 class="text-center fw-bold mb-3">Identitas Perpustakaan</h4>
-          <p class="text-center text-muted small mb-4">Lengkapi data di bawah ini untuk melanjutkan.</p>
+    <div class="col-md-6 col-lg-5">
+      <div class="text-center mb-4">
+          <div class="d-flex justify-content-center gap-3 mb-3">
+              <img src="../assets/logo_lobar.png" alt="Logo Lobar" class="brand-logo">
+              <img src="../assets/logo_disarpus.png" alt="Logo Disarpus" class="brand-logo">
+          </div>
+          <h3 class="page-title">IDENTITAS<br><span style="color:var(--primary)">PERPUSTAKAAN</span></h3>
+          <p class="text-muted small">Silakan pilih data sesuai unit perpustakaan Anda</p>
+      </div>
 
+      <div class="main-card p-4 p-md-5">
           <form id="loginForm" method="POST">
             <input type="hidden" name="target" value="<?= htmlspecialchars($target) ?>">
             <input type="hidden" name="nama_perpus_text" id="input_nama_text">
 
-            <div class="mb-3">
-              <label class="form-label fw-bold">1. Jenis Perpustakaan</label>
-              <select id="select_jenis" name="kategori_utama" class="form-select" required>
+            <div class="mb-4">
+              <label class="form-label mb-2">1. Jenis Perpustakaan</label>
+              <select id="select_jenis" name="kategori_utama" class="form-select shadow-sm" style="border-radius:12px; height: 50px;" required>
                 <option value="">-- Pilih Jenis --</option>
                 <?php foreach(array_keys($strukturJenis) as $jenis): ?>
                     <option value="<?= $jenis ?>"><?= $jenis ?></option>
@@ -67,25 +142,34 @@ foreach ($rawKategori as $row) {
               </select>
             </div>
 
-            <div class="mb-3">
-              <label class="form-label fw-bold">2. Sub Jenis Perpustakaan</label>
-              <select id="select_subjenis" name="kategori_sub" class="form-select" disabled required>
-                <option value="">-- Pilih Jenis Terlebih Dahulu --</option>
+            <div class="mb-4">
+              <label class="form-label mb-2">2. Sub Jenis Perpustakaan</label>
+              <select id="select_subjenis" name="kategori_sub" class="form-select shadow-sm" style="border-radius:12px; height: 50px;" disabled required>
+                <option value="">-- Pilih Jenis Dahulu --</option>
               </select>
             </div>
 
-            <div class="mb-4">
-              <label class="form-label fw-bold">3. Nama Perpustakaan</label>
+            <div class="mb-5">
+              <label class="form-label mb-2">3. Nama Perpustakaan</label>
               <select name="library_id" id="select_nama" class="form-select" disabled required>
                 <option value=""></option> 
               </select>
-              <div class="form-text text-muted">Ketik nama perpustakaan untuk mencari.</div>
             </div>
 
-            <button type="submit" class="btn btn-dark w-100 py-2 fw-bold" id="btnSubmit" disabled>LANJUTKAN &rarr;</button>
-            <div class="text-center mt-3"><a href="../index.php" class="text-decoration-none text-muted small">Kembali ke Menu Awal</a></div>
+            <button type="submit" class="btn btn-primary-gov w-100 mb-3" id="btnSubmit" disabled>
+                LANJUTKAN KE FORMULIR <i class="bi bi-arrow-right ms-2"></i>
+            </button>
+            
+            <div class="text-center">
+                <a href="../index.php" class="text-decoration-none text-muted small fw-bold">
+                    <i class="bi bi-chevron-left me-1"></i> Kembali ke Beranda
+                </a>
+            </div>
           </form>
-        </div>
+      </div>
+      
+      <div class="text-center mt-4">
+          <p class="text-muted" style="font-size: 0.75rem;">&copy; <?= date('Y') ?> Dinas Kearsipan & Perpustakaan Kab. Lombok Barat</p>
       </div>
     </div>
   </div>

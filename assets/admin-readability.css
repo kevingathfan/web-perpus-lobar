@@ -1,0 +1,218 @@
+/* admin-readability.css - Improve text readability across admin pages */
+
+/* Override Bootstrap's text-muted for better contrast */
+.text-muted {
+    color: #64748b !important;
+    /* Ensure minimum contrast ratio of 4.5:1 */
+}
+
+/* Make small text more readable */
+small,
+.small {
+    font-size: 0.875rem !important;
+    /* 14px instead of 12px */
+    line-height: 1.5 !important;
+}
+
+/* Improve form label readability */
+.form-label {
+    color: #0f172a !important;
+    font-weight: 600 !important;
+    font-size: 0.875rem !important;
+}
+
+.form-label.text-muted {
+    color: #475569 !important;
+    /* Darker than default text-muted */
+}
+
+/* Better contrast for table text */
+.table tbody td {
+    color: #1e293b !important;
+    font-size: 0.9rem !important;
+}
+
+.table tbody td.text-muted {
+    color: #64748b !important;
+}
+
+/* Improve badge readability */
+.badge {
+    font-weight: 600 !important;
+    padding: 0.4em 0.75em !important;
+    font-size: 0.8125rem !important;
+    /* 13px */
+}
+
+/* Better alert text */
+.alert {
+    font-size: 0.9rem !important;
+    line-height: 1.6 !important;
+}
+
+.alert.small,
+.alert .small {
+    font-size: 0.875rem !important;
+}
+
+/* Improve button text */
+.btn {
+    font-weight: 600 !important;
+    letter-spacing: 0.3px !important;
+}
+
+.btn.small,
+.btn-sm {
+    font-size: 0.875rem !important;
+}
+
+/* Better pagination text */
+.pagination .page-link {
+    color: #0f172a !important;
+    font-weight: 600 !important;
+}
+
+.pagination .page-item.active .page-link {
+    background-color: #0F52BA !important;
+    border-color: #0F52BA !important;
+    color: #fff !important;
+}
+
+/* Improve stat card text */
+.stat-card-modern .small,
+.stat-card-modern small {
+    font-size: 0.875rem !important;
+    color: #64748b !important;
+}
+
+/* Better modal text */
+.modal-body {
+    color: #1e293b !important;
+    line-height: 1.6 !important;
+}
+
+.modal-title {
+    color: #0f172a !important;
+    font-weight: 700 !important;
+}
+
+/* Improve dropdown text */
+.dropdown-item {
+    color: #1e293b !important;
+    font-weight: 500 !important;
+}
+
+.dropdown-item:hover {
+    background-color: #f1f5f9 !important;
+    color: #0F52BA !important;
+}
+
+/* Better card header text */
+.card-header,
+.card-header-clean {
+    color: #0f172a !important;
+    font-weight: 700 !important;
+}
+
+/* Improve input placeholder */
+.form-control::placeholder,
+.form-select::placeholder {
+    color: #94a3b8 !important;
+    opacity: 1 !important;
+}
+
+/* Better nav pills text */
+.nav-pills .nav-link {
+    color: #475569 !important;
+    font-weight: 600 !important;
+}
+
+.nav-pills .nav-link.active {
+    color: #fff !important;
+}
+
+/* Improve list group text */
+.list-group-item {
+    color: #1e293b !important;
+}
+
+/* Better breadcrumb text */
+.breadcrumb-item {
+    color: #64748b !important;
+}
+
+.breadcrumb-item.active {
+    color: #0f172a !important;
+    font-weight: 600 !important;
+}
+
+/* Improve tab text */
+.nav-tabs .nav-link {
+    color: #475569 !important;
+    font-weight: 600 !important;
+}
+
+.nav-tabs .nav-link.active {
+    color: #0F52BA !important;
+    font-weight: 700 !important;
+}
+
+/* Better status text */
+.text-success {
+    color: #059669 !important;
+    /* Darker green for better contrast */
+}
+
+.text-danger {
+    color: #dc2626 !important;
+    /* Darker red for better contrast */
+}
+
+.text-warning {
+    color: #d97706 !important;
+    /* Darker orange for better contrast */
+}
+
+.text-info {
+    color: #0891b2 !important;
+    /* Darker cyan for better contrast */
+}
+
+/* Improve spinner text */
+.spinner-border+.small,
+.spinner-border+small {
+    color: #64748b !important;
+    font-size: 0.875rem !important;
+}
+
+/* Better empty state text */
+.text-center.text-muted {
+    color: #64748b !important;
+}
+
+/* Improve footer text */
+.footer-info,
+.site-footer {
+    color: #cbd5e1 !important;
+}
+
+.footer-info .text-muted {
+    color: #94a3b8 !important;
+}
+
+/* Fix Distorted Icons */
+.bi,
+.fas,
+.far,
+svg,
+img {
+    flex-shrink: 0 !important;
+    object-fit: contain;
+}
+
+/* Ensure icons in buttons are properly aligned */
+.btn i {
+    display: inline-block;
+    vertical-align: middle;
+    margin-top: -2px;
+}

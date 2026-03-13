@@ -1,7 +1,7 @@
 (function () {
     function hideLoader() {
         var loader = document.getElementById("global-loader");
-        if (!loader) {
+        if (!loader || loader.classList.contains("loader-hidden")) {
             return;
         }
 
@@ -15,9 +15,13 @@
         }, 500);
     }
 
-    if (document.readyState === "complete") {
+    // Fallback: Force remove/hide after 3 seconds if load event is stuck
+    setTimeout(hideLoader, 3000);
+
+    if (document.readyState === "complete" || document.readyState === "interactive") {
         hideLoader();
     } else {
+        document.addEventListener("DOMContentLoaded", hideLoader);
         window.addEventListener("load", hideLoader);
     }
 })();

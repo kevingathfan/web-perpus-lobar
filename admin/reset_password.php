@@ -45,10 +45,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Log reset password
             try {
                 $pdo->exec("CREATE TABLE IF NOT EXISTS password_reset_logs (
-                    id SERIAL PRIMARY KEY,
-                    user_id INTEGER NOT NULL,
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    user_id INT NOT NULL,
                     ip_address VARCHAR(64),
-                    created_at TIMESTAMP NOT NULL DEFAULT NOW()
+                    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
                 )");
                 $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
                 $pdo->prepare("INSERT INTO password_reset_logs (user_id, ip_address) VALUES (?, ?)")->execute([$row['user_id'], $ip]);

@@ -5,17 +5,17 @@ require '../config/database.php';
 require '../config/public_security.php';
 require '../config/mailer.php';
 
-$config = require __DIR__ . '/../mail.php';
+$config = require __DIR__ . '/../config/mail_config.php';
 
 try {
     $pdo->exec("CREATE TABLE IF NOT EXISTS password_reset_email_logs (
-        id SERIAL PRIMARY KEY,
+        id INT AUTO_INCREMENT PRIMARY KEY,
         email VARCHAR(150) NOT NULL,
         status VARCHAR(20) NOT NULL,
         error_message TEXT NULL,
         token_hash VARCHAR(255) NULL,
         expires_at TIMESTAMP NULL,
-        created_at TIMESTAMP NOT NULL DEFAULT NOW()
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
     )");
     // pastikan kolom tambahan ada jika tabel sudah terlanjur dibuat
     $pdo->exec("ALTER TABLE password_reset_email_logs ADD COLUMN IF NOT EXISTS token_hash VARCHAR(255)");
@@ -24,12 +24,12 @@ try {
 
 try {
     $pdo->exec("CREATE TABLE IF NOT EXISTS password_resets (
-        id SERIAL PRIMARY KEY,
-        user_id INTEGER NOT NULL,
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
         token_hash VARCHAR(255) NOT NULL,
         expires_at TIMESTAMP NOT NULL,
         used_at TIMESTAMP NULL,
-        created_at TIMESTAMP NOT NULL DEFAULT NOW()
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
     )");
 } catch (Exception $e) {}
 
@@ -52,9 +52,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $token_hash = hash('sha256', $token);
             // Simpan dengan waktu dari DB agar tidak bentrok timezone
             $ins = $pdo->prepare("INSERT INTO password_resets (user_id, token_hash, expires_at)
-                                  VALUES (?, ?, (NOW() + INTERVAL '1 hour')) RETURNING expires_at");
+                                  VALUES (?, ?, (NOW() + INTERVAL 1 HOUR))");
             $ins->execute([$user['id'], $token_hash]);
-            $expires = $ins->fetchColumn();
+            $expiresStmt = $pdo->prepare("SELECT expires_at FROM password_resets WHERE token_hash = ? ORDER BY id DESC LIMIT 1");
+            $expiresStmt->execute([$token_hash]);
+            $expires = $expiresStmt->fetchColumn();
 
             // Hapus token lama/expired agar tabel tetap bersih
             $pdo->prepare("DELETE FROM password_resets WHERE expires_at <= NOW() OR used_at IS NOT NULL")->execute();
@@ -71,7 +73,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmtLog = $pdo->prepare("INSERT INTO password_reset_email_logs (email, status, error_message, token_hash, expires_at) VALUES (?, ?, ?, ?, ?)");
             $stmtLog->execute([$user['email'], $ok ? 'sent' : 'failed', $ok ? null : $err, $token_hash, $expires]);
         }
-
+        
         $pesan = 'Jika email terdaftar, link reset sudah dikirim.';
     }
 }

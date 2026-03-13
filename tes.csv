@@ -1,2 +1,2 @@
-Nama perpustakaan,kategori,Sub jenis
-perpus alas,umum,perpustakaan komunitas
+jenis_kuesioner,kategori_bagian,teks_pertanyaan,keterangan,tipe_input,pilihan_opsi
+TKM,DATA PRIBADI, Siapa kamu,,radio,"kevin,roman"
